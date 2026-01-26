@@ -1,0 +1,218 @@
+@import 'tailwindcss';
+
+/* Custom Luxury Fonts */
+@font-face {
+  font-family: 'Nathalyn Koplexs Studio';
+  src: url('./assets/fonts/nathalyn/NathalynDemo.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gencha Koplexs Studio';
+  src: url('./assets/fonts/gencha/GenchaRegularDemo.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Miftah Din Studio';
+  src: url('./assets/fonts/miftah/Miftah Personal Use Only.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noverich Syauqi Studio';
+  src: url('./assets/fonts/noverich/Noverich.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Bestime';
+  src: url('./assets/fonts/voyntea/Voyntea PersonalUseOnly.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Deutschlands';
+  src: url('./assets/fonts/deutschlands/Deutschlands.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Montserrat', sans-serif;
+    color: #334155;
+    background-color: #F8FAFC;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer components {
+  .btn-gold {
+    background-color: #C9A96E;
+    color: #0F172A;
+    padding: 0.625rem 1.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+  }
+
+  @media (min-width: 640px) {
+    .btn-gold {
+      padding: 0.75rem 2rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  .btn-gold:hover {
+    background-color: #B89860;
+    box-shadow: 0 10px 25px rgba(201, 169, 110, 0.3);
+  }
+
+  .btn-gold-outline {
+    border: 2px solid #C9A96E;
+    color: #C9A96E;
+    background-color: transparent;
+    padding: 0.625rem 1.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+  }
+
+  @media (min-width: 640px) {
+    .btn-gold-outline {
+      padding: 0.75rem 2rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  .btn-gold-outline:hover {
+    background-color: #C9A96E;
+    color: #0F172A;
+  }
+
+  .section-padding {
+    padding: 3rem 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .section-padding {
+      padding: 5rem 1.5rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .section-padding {
+      padding: 8rem 3rem;
+    }
+  }
+
+  .container-luxury {
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-luxury {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  .gold-accent {
+    width: 4rem;
+    height: 2px;
+    background-color: #C9A96E;
+  }
+
+  .property-card {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.5s ease;
+  }
+
+  .property-card:hover {
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  }
+
+  .property-card img {
+    transition: transform 0.7s ease;
+  }
+
+  .property-card:hover img {
+    transform: scale(1.1);
+  }
+
+  .heading-luxury {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  @media (min-width: 768px) {
+    .heading-luxury {
+      font-size: 3rem;
+    }
+  }
+
+  .subheading-luxury {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .body-luxury {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    line-height: 1.75;
+    color: #334155;
+  }
+
+  .body-light {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.875rem;
+    color: #94A3B8;
+  }
+}
+
+@layer utilities {
+  .gradient-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.3), transparent);
+  }
+
+  .gradient-overlay-dark {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.2));
+  }
+
+  .glass-effect {
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+}
