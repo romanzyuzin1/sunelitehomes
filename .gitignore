@@ -37,3 +37,8 @@ pnpm-debug.log*
 # Temporary files
 *.tmp
 *.temp
+
+# Large media files
+Fotos/Video/
+*.mp4
+*.mov
