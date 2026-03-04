@@ -1,13 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MoveRight, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/i18n/translations";
 
 function Hero() {
   const { language } = useLanguage();
+  const t = translations[language].hero;
   const [titleNumber, setTitleNumber] = useState(0);
   const [animationKey, setAnimationKey] = useState(0);
+  const [showPoster, setShowPoster] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hasTransitioned = useRef(false);
   
   const titles = useMemo(
     () => language === 'es' 
@@ -39,33 +44,65 @@ function Hero() {
     return () => clearTimeout(timeoutId);
   }, [titleNumber, titles]);
 
+  // Wait until the video is actually playing and has rendered a few frames
+  // before removing the poster — this avoids the frozen-frame flash
+  const handlePlaying = useCallback(() => {
+    if (hasTransitioned.current) return;
+    hasTransitioned.current = true;
+    // Small delay so the video renders at least a couple of frames
+    // before the poster starts to fade out
+    setTimeout(() => setShowPoster(false), 300);
+  }, []);
+
   return (
     <div className="w-full min-h-screen flex items-center relative overflow-hidden">
-      {/* Video Background */}
+      {/* Video Background — sits behind the poster, always rendering */}
       <div className="absolute inset-0">
         <video
+          ref={videoRef}
           autoPlay
           loop
           muted
           playsInline
+          preload="auto"
+          onPlaying={handlePlaying}
           className="w-full h-full object-cover"
+          style={{ willChange: 'auto' }}
         >
           <source
-            src="/Fotos/Video/landing_background.mp4"
+            src="/Fotos-optimized/Video/landing_background.mp4"
             type="video/mp4"
           />
         </video>
-        
-        {/* Dark Overlay for text readability */}
-        <div className="absolute inset-0 bg-brand-navy/80" />
       </div>
+
+      {/* Poster Image — sits on TOP, fades out once video is really playing */}
+      <div
+        className="absolute inset-0"
+        style={{
+          zIndex: 1,
+          opacity: showPoster ? 1 : 0,
+          transition: 'opacity 1.5s ease-in-out',
+          pointerEvents: showPoster ? 'auto' : 'none',
+        }}
+      >
+        <img
+          src="/Fotos-optimized/Video/landing_poster.webp"
+          alt=""
+          className="w-full h-full object-cover"
+          fetchPriority="high"
+        />
+      </div>
+        
+      {/* Dark Overlay for text readability */}
+      <div className="absolute inset-0 bg-brand-navy/80" style={{ zIndex: 2 }} />
       
-      <div className="container-luxury mx-auto px-4 sm:px-6 relative z-10">
+      <div className="container-luxury mx-auto px-4 sm:px-6 relative" style={{ zIndex: 3 }}>
         <div className="flex gap-8 py-20 lg:py-32 items-center justify-center flex-col">
           <div className="flex gap-6 flex-col">
             <h1 className="text-4xl sm:text-5xl md:text-7xl max-w-4xl tracking-tight text-center font-playfair">
               <span className="text-white font-light">
-                {language === 'es' ? 'Arquitectura para lo' : 'Architecture for the'}
+                {t.title1}
               </span>
               <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
                 &nbsp;
@@ -95,7 +132,7 @@ function Hero() {
               className="gap-4 bg-white text-[#0F172A] hover:bg-white/90 transition-all font-montserrat"
             >
               <PhoneCall className="w-4 h-4" />
-              {language === 'es' ? 'Agendar Visita' : 'Schedule Viewing'}
+              {t.cta}
             </Button>
             <Button 
               size="lg" 

@@ -10,10 +10,10 @@ export const translations = {
     },
     // Hero
     hero: {
-      title1: 'Architecture for the',
+      title1: 'Arquitectura para lo',
       title2: 'Exceptional',
-      subtitle: 'Curated estates where coastal serenity meets urban sophistication',
-      cta: 'Explorar Portafolio',
+      subtitle: 'Propiedades excepcionales donde la serenidad costera se une a la sofisticación urbana',
+      cta: 'Agendar Visita',
     },
     // Collection
     collection: {
@@ -97,6 +97,29 @@ export const translations = {
       privacy: 'Política de Privacidad',
       terms: 'Términos Legales',
     },
+    // Property Detail
+    propertyDetail: {
+      back: 'Volver a la colección',
+      beds: 'Dormitorios',
+      baths: 'Baños',
+      built: 'construidos',
+      plot: 'parcela',
+      pool: 'Piscina',
+      salePrice: 'Precio de venta',
+      rentalPrice: 'Alquiler mensual',
+      contactUs: 'Contactar',
+      buildYear: 'Año construcción',
+      energy: 'Energía',
+      status: 'Estado',
+      description: 'Descripción',
+      features: 'Características',
+      location: 'Ubicación',
+      notFound: 'Propiedad no encontrada',
+      notFoundDesc: 'La propiedad que buscas no existe o ha sido retirada.',
+      backToHome: 'Volver al inicio',
+      viewDetails: 'Ver Detalles',
+      perMonth: '/mes',
+    },
   },
   en: {
     // Navigation
@@ -112,7 +135,7 @@ export const translations = {
       title1: 'Architecture for the',
       title2: 'Exceptional',
       subtitle: 'Curated estates where coastal serenity meets urban sophistication',
-      cta: 'Explore Portfolio',
+      cta: 'Schedule Viewing',
     },
     // Collection
     collection: {
@@ -195,6 +218,29 @@ export const translations = {
       discretion: 'discretion',
       privacy: 'Privacy Policy',
       terms: 'Legal Terms',
+    },
+    // Property Detail
+    propertyDetail: {
+      back: 'Back to collection',
+      beds: 'Bedrooms',
+      baths: 'Bathrooms',
+      built: 'built',
+      plot: 'plot',
+      pool: 'Pool',
+      salePrice: 'Sale price',
+      rentalPrice: 'Monthly rent',
+      contactUs: 'Contact Us',
+      buildYear: 'Year built',
+      energy: 'Energy',
+      status: 'Status',
+      description: 'Description',
+      features: 'Features',
+      location: 'Location',
+      notFound: 'Property not found',
+      notFoundDesc: 'The property you are looking for does not exist or has been removed.',
+      backToHome: 'Back to home',
+      viewDetails: 'View Details',
+      perMonth: '/month',
     },
   },
 };

@@ -66,15 +66,15 @@ export function Footer() {
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex items-start gap-3 group">
                 <Mail className="w-4 h-4 flex-shrink-0 mt-0.5 group-hover:text-[var(--gold)] transition-colors" />
-                <span className="group-hover:text-white transition-colors">contacto@luxuryestate.com</span>
+                <span className="group-hover:text-white transition-colors">info@sunelitehomes.com</span>
               </li>
               <li className="flex items-start gap-3 group">
                 <Phone className="w-4 h-4 flex-shrink-0 mt-0.5 group-hover:text-[var(--gold)] transition-colors" />
-                <span className="group-hover:text-white transition-colors">+34 91 000 0000</span>
+                <span className="group-hover:text-white transition-colors">+34 650 717 943</span>
               </li>
               <li className="flex items-start gap-3 group">
                 <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5 group-hover:text-[var(--gold)] transition-colors" />
-                <span className="group-hover:text-white transition-colors">Paseo de la Castellana<br />Madrid, España</span>
+                <span className="group-hover:text-white transition-colors">Avenida Riera de Cassoles 43-45<br />08012 Barcelona, España</span>
               </li>
             </ul>
           </div>

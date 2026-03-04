@@ -1,18 +1,21 @@
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../i18n/translations';
+import { optimizedSrc } from '../lib/media';
 
 export function LifestyleSection() {
   const { language } = useLanguage();
   const t = translations[language].lifestyle;
   return (
-    <section className="relative py-0 overflow-hidden">
+    <section id="servicios" className="relative py-0 overflow-hidden">
       {/* Full-Width Visual Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-0">
         {/* Image 1 - Yacht */}
         <div className="relative h-[350px] sm:h-[400px] md:h-[600px] overflow-hidden group">
           <img
-            src="/Fotos/RENDERS 1/Ed_Maristany Forum - 01.jpg"
+            src={optimizedSrc("/Fotos/RENDERS 1/Ed_Maristany Forum - 01.jpg")}
             alt="Luxury yacht lifestyle"
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="gradient-overlay" />
@@ -32,8 +35,10 @@ export function LifestyleSection() {
         {/* Image 2 - Fine Dining/Interior */}
         <div className="relative h-[400px] md:h-[600px] overflow-hidden group">
           <img
-            src="/Fotos/PROYECTO 2/P1546535-HDR-2.jpg"
+            src={optimizedSrc("/Fotos/PROYECTO 2/P1546535-HDR-2.jpg")}
             alt="Luxury interior design"
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="gradient-overlay" />
@@ -53,8 +58,10 @@ export function LifestyleSection() {
         {/* Image 3 - Urban Cityscape */}
         <div className="relative h-[400px] md:h-[600px] overflow-hidden group">
           <img
-            src="/Fotos/RENDERS 1/Ed_Maristany Forum - 12.jpg"
+            src={optimizedSrc("/Fotos/RENDERS 1/Ed_Maristany Forum - 12.jpg")}
             alt="Luxury city living"
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="gradient-overlay" />

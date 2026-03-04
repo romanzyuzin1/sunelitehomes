@@ -1,6 +1,7 @@
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../i18n/translations';
 import BackgroundShader from './ui/background-shader';
+import { optimizedSrc } from '../lib/media';
 
 export function TheFirmSection() {
   const { language } = useLanguage();
@@ -18,8 +19,10 @@ export function TheFirmSection() {
           <div className="order-2 md:order-1">
             <div className="relative">
               <img
-                src="/Fotos/PROYECTO 2/P1557037-2.jpg"
+                src={optimizedSrc("/Fotos/PROYECTO 2/P1557037-2.jpg")}
                 alt="Principal agent of SunEliteHomes"
+                loading="lazy"
+                decoding="async"
                 className="w-full aspect-[3/4] object-cover grayscale hover:grayscale-0 transition-all duration-700"
               />
               <div className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 w-24 h-24 sm:w-32 sm:h-32 bg-brand-gold flex items-center justify-center">

@@ -20,9 +20,6 @@ const config: Config = {
         playfair: ['Playfair Display', 'serif'],
         montserrat: ['Montserrat', 'sans-serif'],
       },
-      backgroundImage: {
-        'gold-texture': "url('/gold-texture.jpg')",
-      },
       animation: {
         'fade-in': 'fadeIn 0.6s ease-in-out',
         'slide-up': 'slideUp 0.8s ease-out',

@@ -1,6 +1,12 @@
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../i18n/translations';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { thumbSrc } from '../lib/media';
+import { ProjectGalleryModal } from './ProjectGalleryModal';
+import { Bed, Bath, Maximize, MapPin, Images } from 'lucide-react';
+import { formatPrice } from '../data/properties';
+import { getAllProperties } from '../lib/propertyStorage';
 
 const properties = [
   {
@@ -125,17 +131,25 @@ const properties = [
       '/Fotos/PROYECTO 5/AT5A5616.jpg',
       '/Fotos/PROYECTO 5/AT5A5612.jpg',
       '/Fotos/PROYECTO 5/AT5A5613.jpg',
-      '/Fotos/PROYECTO 1/AT5A9694.jpg',
     ],
   },
 ];
 
+const statusStyles: Record<string, { bg: string; text: string }> = {
+  'Nueva Captación': { bg: 'bg-brand-gold', text: 'text-brand-navy' },
+  'Exclusiva':       { bg: 'bg-white/90', text: 'text-brand-navy' },
+  'Vendida':         { bg: 'bg-red-800/80', text: 'text-white' },
+};
+
 export function CollectionSection() {
   const { language } = useLanguage();
   const t = translations[language].collection;
-  const [expandedMobileIndex, setExpandedMobileIndex] = useState<number | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState<{ [key: number]: number }>({});
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const inmuebles = getAllProperties();
+  const [gallery, setGallery] = useState<{ images: string[]; name: string } | null>(null);
+
+  const openGallery = useCallback((property: typeof properties[0]) => {
+    setGallery({ images: property.allImages, name: property.name });
+  }, []);
 
   return (
     <section id="collection" className="section-padding bg-black">
@@ -151,192 +165,189 @@ export function CollectionSection() {
           </p>
         </div>
 
-        {/* Properties Library Grid - Desktop */}
-        <div className="hidden md:flex gap-2 pb-8 justify-center">
+        {/* Inmuebles from CMS */}
+        {inmuebles.filter(p => p.images.length > 0).length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {inmuebles
+              .filter((p) => p.images.length > 0)
+              .map((property) => (
+                <Link
+                  to={`/inmueble/${property.id}`}
+                  key={property.id}
+                  className="group cursor-pointer block"
+                >
+                  <article>
+                    {/* Image */}
+                    <div className="relative aspect-[4/3] overflow-hidden mb-4">
+                      <img
+                        src={property.images[0]}
+                        alt={property.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      {/* Overlay on hover */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+
+                      {/* Price badge */}
+                      <span className="absolute top-4 left-4 px-3 py-1 text-xs font-montserrat font-semibold uppercase tracking-wider bg-brand-gold text-brand-navy">
+                        {formatPrice(property.price, property.currency, property.priceFreq, language)}
+                      </span>
+
+                      {/* Type badge */}
+                      <span className="absolute top-4 right-4 px-3 py-1 text-xs font-montserrat font-semibold uppercase tracking-wider bg-white/90 text-brand-navy">
+                        {property.type}
+                      </span>
+
+                      {/* Images count */}
+                      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 text-white text-xs font-montserrat opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <Images className="w-3.5 h-3.5" />
+                        {property.images.length}
+                      </div>
+
+                      {/* Gold bottom accent on hover */}
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+                    </div>
+
+                    {/* Info */}
+                    <div className="px-1">
+                      <h3 className="font-playfair text-xl md:text-2xl text-white font-semibold mb-1.5 group-hover:text-brand-gold transition-colors duration-300">
+                        {property.title}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-white/50 mb-3">
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span className="font-montserrat text-sm">
+                          {property.town}, {property.province}
+                        </span>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="flex items-center gap-5 text-white/60 font-montserrat text-sm border-t border-white/10 pt-3">
+                        <div className="flex items-center gap-1.5">
+                          <Bed className="w-4 h-4 text-brand-gold/70" />
+                          <span>{property.beds}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Bath className="w-4 h-4 text-brand-gold/70" />
+                          <span>{property.baths}</span>
+                        </div>
+                        {property.surfaceArea.built > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <Maximize className="w-4 h-4 text-brand-gold/70" />
+                            <span>{property.surfaceArea.built} m²</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                </Link>
+              ))}
+          </div>
+        )}
+
+        {/* Portfolio Gallery */}
+        <div className="text-center mt-20 mb-12">
+          <div className="gold-accent mx-auto mb-6" />
+          <h3 className="font-playfair text-2xl md:text-3xl text-white mb-4">
+            {language === 'es' ? 'Nuestros Proyectos' : 'Our Projects'}
+          </h3>
+          <p className="body-luxury max-w-2xl mx-auto text-white/70">
+            {language === 'es'
+              ? 'Descubra una selección de nuestros proyectos más destacados.'
+              : 'Discover a selection of our most outstanding projects.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {properties.map((property, index) => {
-            const isHovered = hoveredIndex === index;
-            const currentImg = currentImageIndex[index] || 0;
-            
-            const nextImage = (e: React.MouseEvent) => {
-              e.stopPropagation();
-              setCurrentImageIndex(prev => ({
-                ...prev,
-                [index]: (prev[index] || 0) + 1 >= property.allImages.length ? 0 : (prev[index] || 0) + 1
-              }));
-            };
-            
-            const prevImage = (e: React.MouseEvent) => {
-              e.stopPropagation();
-              setCurrentImageIndex(prev => ({
-                ...prev,
-                [index]: (prev[index] || 0) - 1 < 0 ? property.allImages.length - 1 : (prev[index] || 0) - 1
-              }));
-            };
-            
+            const status = property.status;
+            const style = status ? statusStyles[status] : null;
+
             return (
-              <div 
+              <article
                 key={index}
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                className={`relative group cursor-pointer h-[600px] overflow-hidden transition-all duration-700 ease-out ${
-                  isHovered ? 'w-[600px]' : 'w-48'
-                }`}
+                className="group cursor-pointer"
+                onClick={() => openGallery(property)}
               >
-                {/* Background Image */}
-                <img
-                  src={isHovered ? property.allImages[currentImg] : property.image}
-                  alt={property.name}
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
-                />
-                
-                {/* Dark Overlay */}
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all duration-700" />
-                
-                {/* Vertical Text (when not hovered) */}
-                <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
-                  isHovered ? 'opacity-0' : 'opacity-100'
-                }`}>
-                  <h3 
-                    className="font-playfair text-3xl font-bold text-white tracking-wider"
-                    style={{ 
-                      writingMode: 'vertical-rl',
-                      textOrientation: 'mixed'
-                    }}
-                  >
-                    {property.name.toUpperCase()}
-                  </h3>
+                {/* Image */}
+                <div className="relative aspect-[4/3] overflow-hidden mb-4">
+                  <img
+                    src={thumbSrc(property.image)}
+                    alt={property.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  {/* Subtle overlay on hover */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+
+                  {/* Status Badge */}
+                  {status && style && (
+                    <span className={`absolute top-4 left-4 px-3 py-1 text-xs font-montserrat font-semibold uppercase tracking-wider ${style.bg} ${style.text}`}>
+                      {status === 'Nueva Captación' ? t.newListing
+                        : status === 'Vendida' ? t.sold
+                        : t.exclusive}
+                    </span>
+                  )}
+
+                  {/* Gallery indicator */}
+                  <div className="absolute bottom-4 right-4 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 text-white text-xs font-montserrat opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <Images className="w-3.5 h-3.5" />
+                    {property.allImages.length}
+                  </div>
+
+                  {/* Gold bottom accent on hover */}
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
                 </div>
 
-                {/* Navigation Buttons */}
-                {isHovered && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/50 hover:bg-brand-gold/80 text-white hover:text-black transition-all flex items-center justify-center"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/50 hover:bg-brand-gold/80 text-white hover:text-black transition-all flex items-center justify-center"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                      </svg>
-                    </button>
-                    
-                    {/* Image Counter */}
-                    <div className="absolute bottom-4 right-4 z-10 bg-black/50 px-3 py-1 text-white text-sm font-montserrat">
-                      {currentImg + 1} / {property.allImages.length}
-                    </div>
-                  </>
-                )}
+                {/* Info */}
+                <div className="px-1">
+                  <h3 className="font-playfair text-xl md:text-2xl text-white font-semibold mb-1.5 group-hover:text-brand-gold transition-colors duration-300">
+                    {property.name}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-white/50 mb-3">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span className="font-montserrat text-sm">{property.location}</span>
+                  </div>
 
-                {/* Gold vertical line accent */}
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-gold opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
+                  {/* Stats */}
+                  <div className="flex items-center gap-5 text-white/60 font-montserrat text-sm border-t border-white/10 pt-3">
+                    <div className="flex items-center gap-1.5">
+                      <Bed className="w-4 h-4 text-brand-gold/70" />
+                      <span>{property.beds}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Bath className="w-4 h-4 text-brand-gold/70" />
+                      <span>{property.baths}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Maximize className="w-4 h-4 text-brand-gold/70" />
+                      <span>{property.sqm} m²</span>
+                    </div>
+                  </div>
+                </div>
+              </article>
             );
           })}
         </div>
 
-        {/* Properties Library Grid - Mobile */}
-        <div className="md:hidden flex flex-col gap-2">
-          {properties.map((property, index) => {
-            const isExpanded = expandedMobileIndex === index;
-            const currentImg = currentImageIndex[index] || 0;
-            
-            const nextImage = (e: React.MouseEvent) => {
-              e.stopPropagation();
-              setCurrentImageIndex(prev => ({
-                ...prev,
-                [index]: (prev[index] || 0) + 1 >= property.allImages.length ? 0 : (prev[index] || 0) + 1
-              }));
-            };
-            
-            const prevImage = (e: React.MouseEvent) => {
-              e.stopPropagation();
-              setCurrentImageIndex(prev => ({
-                ...prev,
-                [index]: (prev[index] || 0) - 1 < 0 ? property.allImages.length - 1 : (prev[index] || 0) - 1
-              }));
-            };
-            
-            return (
-              <div 
-                key={index}
-                onClick={() => setExpandedMobileIndex(isExpanded ? null : index)}
-                className={`relative cursor-pointer overflow-hidden transition-all duration-300 ${
-                  isExpanded ? 'h-96' : 'h-32'
-                }`}
-              >
-                {/* Background Image */}
-                <img
-                  src={isExpanded ? property.allImages[currentImg] : property.image}
-                  alt={property.name}
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200"
-                />
-                
-                {/* Dark Overlay */}
-                <div className={`absolute inset-0 transition-all duration-300 ${
-                  isExpanded ? 'bg-black/20' : 'bg-black/40'
-                }`} />
-                
-                {/* Horizontal Text (when collapsed) */}
-                <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
-                  isExpanded ? 'opacity-0' : 'opacity-100'
-                }`}>
-                  <h3 className="font-playfair text-2xl font-bold text-white tracking-wider">
-                    {property.name.toUpperCase()}
-                  </h3>
-                </div>
-
-                {/* Navigation Buttons (when expanded) */}
-                {isExpanded && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/50 hover:bg-brand-gold/80 text-white hover:text-black transition-all flex items-center justify-center"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/50 hover:bg-brand-gold/80 text-white hover:text-black transition-all flex items-center justify-center"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                      </svg>
-                    </button>
-                    
-                    {/* Image Counter */}
-                    <div className="absolute bottom-2 right-2 z-10 bg-black/50 px-3 py-1 text-white text-sm font-montserrat">
-                      {currentImg + 1} / {property.allImages.length}
-                    </div>
-                  </>
-                )}
-
-                {/* Top border accent */}
-                <div className={`absolute left-0 right-0 top-0 h-1 bg-brand-gold transition-opacity duration-300 ${
-                  isExpanded ? 'opacity-100' : 'opacity-0'
-                }`} />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* CTA to View All */}
+        {/* CTA */}
         <div className="text-center mt-16">
           <button className="px-8 py-3 border-2 border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-black transition-all font-montserrat font-semibold">
             {t.viewAll}
           </button>
         </div>
       </div>
+
+      {/* Gallery Modal — images load on demand only when opened */}
+      {gallery && (
+        <ProjectGalleryModal
+          isOpen={true}
+          onClose={() => setGallery(null)}
+          images={gallery.images}
+          projectName={gallery.name}
+        />
+      )}
     </section>
   );
 }

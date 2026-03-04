@@ -4,6 +4,7 @@
   import path from 'path';
 
   export default defineConfig({
+    base: process.env.NODE_ENV === 'production' ? '/' : '/',
     plugins: [react()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
@@ -18,9 +19,6 @@
         'next-themes@0.4.6': 'next-themes',
         'lucide-react@0.487.0': 'lucide-react',
         'input-otp@1.4.2': 'input-otp',
-        'figma:asset/df64afce9c8855ba33a58601747fdcd4478b8b20.png': path.resolve(__dirname, './src/assets/df64afce9c8855ba33a58601747fdcd4478b8b20.png'),
-        'figma:asset/8d7ee862e6a6dc405a8f6a2ded0609b40b0f5504.png': path.resolve(__dirname, './src/assets/8d7ee862e6a6dc405a8f6a2ded0609b40b0f5504.png'),
-        'figma:asset/370ee23f1ade3f38aae4ce2c058001a13a04acf8.png': path.resolve(__dirname, './src/assets/370ee23f1ade3f38aae4ce2c058001a13a04acf8.png'),
         'embla-carousel-react@8.6.0': 'embla-carousel-react',
         'cmdk@1.1.1': 'cmdk',
         'class-variance-authority@0.7.1': 'class-variance-authority',
@@ -50,7 +48,6 @@
         '@radix-ui/react-aspect-ratio@1.1.2': '@radix-ui/react-aspect-ratio',
         '@radix-ui/react-alert-dialog@1.1.6': '@radix-ui/react-alert-dialog',
         '@radix-ui/react-accordion@1.2.3': '@radix-ui/react-accordion',
-        '@': path.resolve(__dirname, './src'),
       },
     },
     build: {

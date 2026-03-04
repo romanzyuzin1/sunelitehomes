@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Globe } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../i18n/translations';
@@ -12,6 +13,8 @@ export function LuxuryNavigation() {
   const { language, setLanguage } = useLanguage();
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const t = translations[language].nav;
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,10 +40,14 @@ export function LuxuryNavigation() {
   }, [lastScrollY]);
 
   const scrollToSection = (sectionId: string) => {
+    setIsMobileMenuOpen(false);
+    if (location.pathname !== '/') {
+      navigate('/#' + sectionId);
+      return;
+    }
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
-      setIsMobileMenuOpen(false);
     }
   };
 
@@ -49,10 +56,12 @@ export function LuxuryNavigation() {
     setShowLangDropdown(false);
   };
 
+  const isDetailPage = location.pathname.startsWith('/inmueble');
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-[#0F172A] shadow-lg' : 'bg-transparent'
+        isScrolled || isDetailPage ? 'bg-[#0F172A] shadow-lg' : 'bg-transparent'
       } ${
         isVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
@@ -63,7 +72,7 @@ export function LuxuryNavigation() {
           <div className="flex-1">
             <a
               href="/"
-              className="font-playfair text-base sm:text-lg md:text-xl font-bold tracking-tight transition-colors flex items-center gap-2 text-white"
+              className="font-montserrat text-base sm:text-lg md:text-xl font-bold tracking-tight transition-colors flex items-center gap-2 text-white"
             >
               <img 
                 src={logoImg} 
@@ -133,6 +142,14 @@ export function LuxuryNavigation() {
                 </div>
               )}
             </div>
+
+            {/* Desktop Private Area Button */}
+            <button
+              onClick={() => navigate('/admin')}
+              className="btn-gold-outline"
+            >
+              {t.privateArea}
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -212,7 +229,10 @@ export function LuxuryNavigation() {
                 </button>
               </div>
 
-              <button className="btn-gold-outline mt-4">
+              <button
+                className="btn-gold-outline mt-4"
+                onClick={() => { setIsMobileMenuOpen(false); navigate('/admin'); }}
+              >
                 {t.privateArea}
               </button>
             </div>

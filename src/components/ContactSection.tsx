@@ -140,7 +140,7 @@ export function ContactSection() {
                   </div>
                   <div>
                     <p className="text-gray-600 text-sm mb-1">Email</p>
-                    <p>contacto@luxuryrealestate.com</p>
+                    <p>info@sunelitehomes.com</p>
                   </div>
                 </motion.div>
                 <motion.div 
@@ -152,7 +152,7 @@ export function ContactSection() {
                   </div>
                   <div>
                     <p className="text-gray-600 text-sm mb-1">Teléfono</p>
-                    <p>+34 91 000 0000</p>
+                    <p>+34 650 717 943</p>
                   </div>
                 </motion.div>
                 <motion.div 
@@ -164,7 +164,7 @@ export function ContactSection() {
                   </div>
                   <div>
                     <p className="text-gray-600 text-sm mb-1">Oficina</p>
-                    <p>Paseo de la Castellana, Madrid</p>
+                    <p>Avenida Riera de Cassoles 43-45, Barcelona</p>
                   </div>
                 </motion.div>
               </div>

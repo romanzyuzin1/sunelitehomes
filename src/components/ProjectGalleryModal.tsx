@@ -1,5 +1,6 @@
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { optimizedSrc, thumbSrc } from '../lib/media';
 
 interface ProjectGalleryModalProps {
   isOpen: boolean;
@@ -58,7 +59,7 @@ export function ProjectGalleryModal({ isOpen, onClose, images, projectName }: Pr
       {/* Main Image */}
       <div className="max-w-7xl max-h-[90vh] mx-auto px-20">
         <img
-          src={images[currentIndex]}
+          src={optimizedSrc(images[currentIndex])}
           alt={`${projectName} - Image ${currentIndex + 1}`}
           className="w-full h-full object-contain"
         />
@@ -75,8 +76,10 @@ export function ProjectGalleryModal({ isOpen, onClose, images, projectName }: Pr
             }`}
           >
             <img
-              src={img}
+              src={thumbSrc(img)}
               alt={`Thumbnail ${idx + 1}`}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
             />
           </button>

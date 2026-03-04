@@ -17,7 +17,7 @@ export function LuxuryFooter() {
   };
 
   return (
-    <footer id="contacto" className="bg-black text-white">
+    <footer className="bg-black text-white">
       {/* Main Footer Content */}
       <div className="section-padding border-b border-brand-gold/20">
         <div className="container-luxury">
@@ -66,6 +66,7 @@ export function LuxuryFooter() {
                   <a
                     href="#servicios"
                     className="font-montserrat text-sm text-brand-offwhite hover:text-brand-gold transition-colors"
+                    onClick={(e) => { e.preventDefault(); document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' }); }}
                   >
                     {navT.services}
                   </a>
@@ -125,29 +126,29 @@ export function LuxuryFooter() {
                   <MapPin className="w-5 h-5 text-brand-gold flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-montserrat text-sm text-brand-offwhite">
-                      Paseo de la Castellana 95
+                      Avenida Riera de Cassoles 43-45, 1-1
                     </p>
                     <p className="font-montserrat text-sm text-brand-lightgrey">
-                      28046 Madrid, España
+                      08012 Barcelona, España
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-brand-gold flex-shrink-0" />
                   <a
-                    href="tel:+34912345678"
+                    href="tel:+34650717943"
                     className="font-montserrat text-sm text-brand-offwhite hover:text-brand-gold transition-colors"
                   >
-                    +34 91 234 5678
+                    +34 650 717 943
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-brand-gold flex-shrink-0" />
                   <a
-                    href="mailto:contact@sunelitehomes.com"
+                    href="mailto:info@sunelitehomes.com"
                     className="font-montserrat text-sm text-brand-offwhite hover:text-brand-gold transition-colors"
                   >
-                    contact@sunelitehomes.com
+                    info@sunelitehomes.com
                   </a>
                 </div>
               </div>
