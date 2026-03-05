@@ -14,16 +14,27 @@ import {
 } from 'lucide-react';
 
 export function AdminLayout() {
-  const { isAuthenticated, username, logout } = useAdminAuth();
+  const { isAuthenticated, username, logout, loading } = useAdminAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-brand-gold border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="font-montserrat text-sm text-gray-500">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;
   }
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/admin/login');
   };
 

@@ -1,12 +1,12 @@
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../i18n/translations';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { thumbSrc } from '../lib/media';
 import { ProjectGalleryModal } from './ProjectGalleryModal';
 import { Bed, Bath, Maximize, MapPin, Images } from 'lucide-react';
-import { formatPrice } from '../data/properties';
-import { getAllProperties } from '../lib/propertyStorage';
+import { formatPrice, type Property } from '../data/properties';
+import { fetchAllProperties } from '../lib/propertyService';
 
 const properties = [
   {
@@ -144,8 +144,12 @@ const statusStyles: Record<string, { bg: string; text: string }> = {
 export function CollectionSection() {
   const { language } = useLanguage();
   const t = translations[language].collection;
-  const inmuebles = getAllProperties();
+  const [inmuebles, setInmuebles] = useState<Property[]>([]);
   const [gallery, setGallery] = useState<{ images: string[]; name: string } | null>(null);
+
+  useEffect(() => {
+    fetchAllProperties().then(setInmuebles).catch(() => {});
+  }, []);
 
   const openGallery = useCallback((property: typeof properties[0]) => {
     setGallery({ images: property.allImages, name: property.name });

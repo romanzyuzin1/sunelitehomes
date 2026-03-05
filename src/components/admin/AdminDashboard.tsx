@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { loadStoredProperties, deleteProperty } from '../../lib/propertyStorage';
+import { fetchAllProperties, deletePropertyById } from '../../lib/propertyService';
 import { formatPrice } from '../../data/properties';
+import type { Property } from '../../data/properties';
 import {
   Plus,
   Search,
@@ -11,12 +12,28 @@ import {
   AlertTriangle,
   Home,
   Image,
+  Loader2,
 } from 'lucide-react';
 
 export function AdminDashboard() {
-  const [properties, setProperties] = useState(() => loadStoredProperties());
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const loadProperties = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchAllProperties();
+      setProperties(data);
+    } catch (err) {
+      console.error('Error loading properties:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadProperties(); }, [loadProperties]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return properties;
@@ -30,11 +47,23 @@ export function AdminDashboard() {
     );
   }, [properties, search]);
 
-  const handleDelete = (id: number) => {
-    deleteProperty(id);
-    setProperties(loadStoredProperties());
+  const handleDelete = async (id: number) => {
+    try {
+      await deletePropertyById(id);
+      await loadProperties();
+    } catch (err) {
+      console.error('Error deleting property:', err);
+    }
     setDeleteId(null);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div>

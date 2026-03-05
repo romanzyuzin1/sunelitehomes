@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../i18n/translations';
 import { formatPrice } from '../data/properties';
-import { getPropertyByIdFromAll } from '../lib/propertyStorage';
+import { fetchPropertyById } from '../lib/propertyService';
+import type { Property } from '../data/properties';
 import { LuxuryNavigation } from './LuxuryNavigation';
 import { LuxuryFooter } from './LuxuryFooter';
 import {
@@ -128,14 +129,32 @@ export function PropertyDetailPage() {
   const { language } = useLanguage();
   const t = translations[language].propertyDetail;
 
-  const property = getPropertyByIdFromAll(Number(id));
+  const [property, setProperty] = useState<Property | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    setLoading(true);
+    fetchPropertyById(Number(id))
+      .then(p => setProperty(p))
+      .catch(() => setProperty(null))
+      .finally(() => setLoading(false));
   }, [id]);
+
+  if (loading) {
+    return (
+      <>
+        <LuxuryNavigation />
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="w-8 h-8 border-2 border-brand-gold border-t-transparent rounded-full animate-spin" />
+        </div>
+        <LuxuryFooter />
+      </>
+    );
+  }
 
   if (!property) {
     return (

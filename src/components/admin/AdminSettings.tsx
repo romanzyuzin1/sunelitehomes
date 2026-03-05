@@ -1,18 +1,18 @@
 import { useState, type FormEvent } from 'react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
-import { Shield, Check, AlertTriangle } from 'lucide-react';
+import { Shield, Check, AlertTriangle, Loader2 } from 'lucide-react';
 
 export function AdminSettings() {
   const { changePassword } = useAdminAuth();
-  const [currentPwd, setCurrentPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{
     type: 'success' | 'error';
     text: string;
   } | null>(null);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setMessage(null);
 
@@ -28,19 +28,29 @@ export function AdminSettings() {
       return;
     }
 
-    if (changePassword(currentPwd, newPwd)) {
-      setMessage({
-        type: 'success',
-        text: 'Contraseña actualizada correctamente.',
-      });
-      setCurrentPwd('');
-      setNewPwd('');
-      setConfirmPwd('');
-    } else {
+    setSubmitting(true);
+    try {
+      const ok = await changePassword(newPwd);
+      if (ok) {
+        setMessage({
+          type: 'success',
+          text: 'Contraseña actualizada correctamente.',
+        });
+        setNewPwd('');
+        setConfirmPwd('');
+      } else {
+        setMessage({
+          type: 'error',
+          text: 'Error al actualizar la contraseña.',
+        });
+      }
+    } catch {
       setMessage({
         type: 'error',
-        text: 'La contraseña actual es incorrecta.',
+        text: 'Error de conexión. Inténtelo más tarde.',
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -84,18 +94,6 @@ export function AdminSettings() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block font-montserrat text-sm text-gray-600 mb-1">
-              Contraseña Actual
-            </label>
-            <input
-              type="password"
-              required
-              value={currentPwd}
-              onChange={e => setCurrentPwd(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded font-montserrat text-sm focus:outline-none focus:border-brand-gold"
-            />
-          </div>
-          <div>
-            <label className="block font-montserrat text-sm text-gray-600 mb-1">
               Nueva Contraseña
             </label>
             <input
@@ -122,9 +120,11 @@ export function AdminSettings() {
           </div>
           <button
             type="submit"
-            className="px-6 py-2.5 bg-brand-gold text-brand-navy font-montserrat text-sm font-semibold rounded hover:bg-brand-gold/90 transition-colors"
+            disabled={submitting}
+            className="px-6 py-2.5 bg-brand-gold text-brand-navy font-montserrat text-sm font-semibold rounded hover:bg-brand-gold/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
-            Actualizar Contraseña
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {submitting ? 'Actualizando…' : 'Actualizar Contraseña'}
           </button>
         </form>
       </div>

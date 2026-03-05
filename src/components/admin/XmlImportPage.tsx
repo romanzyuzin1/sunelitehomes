@@ -1,10 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  parseInmoCmsXml,
-  loadStoredProperties,
-  saveStoredProperties,
-} from '../../lib/propertyStorage';
+import { parseInmoCmsXml } from '../../lib/propertyStorage';
+import { bulkInsertProperties } from '../../lib/propertyService';
 import type { Property } from '../../data/properties';
 import {
   Upload,
@@ -67,24 +64,20 @@ export function XmlImportPage() {
     }
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     setImporting(true);
-    const toImport = parsedProperties.filter(p => selected.has(p.id));
-    const existing = loadStoredProperties();
-
-    // Merge: replace existing by id, add new ones
-    const merged = [
-      ...existing.filter(p => !selected.has(p.id)),
-      ...toImport,
-    ];
-
-    saveStoredProperties(merged);
-    setImporting(false);
-    setImported(true);
-
-    setTimeout(() => {
-      navigate('/admin/dashboard');
-    }, 2000);
+    try {
+      const toImport = parsedProperties.filter(p => selected.has(p.id));
+      await bulkInsertProperties(toImport);
+      setImported(true);
+      setTimeout(() => {
+        navigate('/admin/dashboard');
+      }, 2000);
+    } catch {
+      setError('Error al guardar los inmuebles. Inténtelo de nuevo.');
+    } finally {
+      setImporting(false);
+    }
   };
 
   const generateSampleXml = () => {

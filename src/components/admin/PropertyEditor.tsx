@@ -1,49 +1,61 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  loadStoredProperties,
-  saveStoredProperties,
+  fetchPropertyById,
+  createProperty,
+  updatePropertyById,
   createEmptyProperty,
-} from '../../lib/propertyStorage';
+} from '../../lib/propertyService';
 import type { Property } from '../../data/properties';
-import { Save, ArrowLeft, Plus, X, Image as ImageIcon } from 'lucide-react';
+import { Save, ArrowLeft, Plus, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 
 export function PropertyEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isNew = !id || id === 'nueva';
 
-  const [property, setProperty] = useState<Property>(() => {
-    if (isNew) return createEmptyProperty();
-    const all = loadStoredProperties();
-    return all.find(p => p.id === Number(id)) || createEmptyProperty();
-  });
-
+  const [property, setProperty] = useState<Property>(createEmptyProperty);
+  const [loading, setLoading] = useState(!isNew);
   const [newFeature, setNewFeature] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Load existing property for edit mode
+  useEffect(() => {
+    if (isNew) return;
+    let cancelled = false;
+    setLoading(true);
+    fetchPropertyById(Number(id)).then(p => {
+      if (!cancelled) {
+        setProperty(p ?? createEmptyProperty());
+        setLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [id, isNew]);
 
   const updateField = <K extends keyof Property>(key: K, value: Property[K]) => {
     setProperty(prev => ({ ...prev, [key]: value }));
     setSaved(false);
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const all = loadStoredProperties();
-    const existingIndex = all.findIndex(p => p.id === property.id);
-
-    if (existingIndex !== -1) {
-      all[existingIndex] = property;
-    } else {
-      all.push(property);
-    }
-
-    saveStoredProperties(all);
-    setSaved(true);
-
-    if (isNew) {
-      navigate(`/admin/propiedades/${property.id}`, { replace: true });
+    setSaving(true);
+    try {
+      if (isNew) {
+        const created = await createProperty(property);
+        setSaved(true);
+        navigate(`/admin/propiedades/${created.id}`, { replace: true });
+      } else {
+        await updatePropertyById(property.id, property);
+        setSaved(true);
+      }
+    } catch (err) {
+      console.error('Error saving property:', err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -76,6 +88,14 @@ export function PropertyEditor() {
       property.images.filter(i => i !== url),
     );
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -615,9 +635,10 @@ export function PropertyEditor() {
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-navy font-montserrat text-sm font-semibold hover:bg-brand-gold/90 rounded transition-colors"
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-navy font-montserrat text-sm font-semibold hover:bg-brand-gold/90 rounded transition-colors disabled:opacity-70"
             >
-              <Save className="w-4 h-4" />
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {isNew ? 'Crear Inmueble' : 'Guardar Cambios'}
             </button>
           </div>

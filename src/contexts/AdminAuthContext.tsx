@@ -2,29 +2,29 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
   useCallback,
   type ReactNode,
 } from 'react';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import type { User } from '@supabase/supabase-js';
 
 interface AdminAuthState {
   isAuthenticated: boolean;
   username: string | null;
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
-  changePassword: (currentPassword: string, newPassword: string) => boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  changePassword: (newPassword: string) => Promise<boolean>;
 }
 
 const AdminAuthContext = createContext<AdminAuthState | null>(null);
 
-const AUTH_KEY = 'seh_admin_credentials';
-const SESSION_KEY = 'seh_admin_session';
+// ─── localStorage fallback (when Supabase is not configured) ─────────
 
-interface Credentials {
-  username: string;
-  passwordHash: string;
-}
+const LS_AUTH_KEY = 'seh_admin_credentials';
+const LS_SESSION_KEY = 'seh_admin_session';
 
-/** Simple hash — NOT cryptographically secure. For production use a backend. */
 function simpleHash(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -35,69 +35,100 @@ function simpleHash(str: string): string {
   return hash.toString(36);
 }
 
-function getCredentials(): Credentials {
+function lsGetCreds() {
   try {
-    const raw = localStorage.getItem(AUTH_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {
-    /* fall through */
-  }
-  // Default credentials
-  return {
-    username: 'admin@sunelitehomes.com',
-    passwordHash: simpleHash('admin123'),
-  };
+    const raw = localStorage.getItem(LS_AUTH_KEY);
+    if (raw) return JSON.parse(raw) as { username: string; passwordHash: string };
+  } catch { /* ignore */ }
+  return { username: 'admin@sunelitehomes.com', passwordHash: simpleHash('admin123') };
 }
 
-function saveCredentials(creds: Credentials): void {
-  localStorage.setItem(AUTH_KEY, JSON.stringify(creds));
-}
+// ─── Provider ────────────────────────────────────────────────────────
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    () => sessionStorage.getItem(SESSION_KEY) === 'true',
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fallback state (non-Supabase)
+  const [lsAuth, setLsAuth] = useState(
+    () => sessionStorage.getItem(LS_SESSION_KEY) === 'true',
   );
-  const [username, setUsername] = useState<string | null>(() =>
-    sessionStorage.getItem(SESSION_KEY) === 'true'
-      ? sessionStorage.getItem(SESSION_KEY + '_user') || 'admin'
+  const [lsUser, setLsUser] = useState<string | null>(() =>
+    sessionStorage.getItem(LS_SESSION_KEY) === 'true'
+      ? sessionStorage.getItem(LS_SESSION_KEY + '_user') || 'admin'
       : null,
   );
 
-  const login = useCallback((user: string, password: string): boolean => {
-    const creds = getCredentials();
-    if (user === creds.username && simpleHash(password) === creds.passwordHash) {
-      setIsAuthenticated(true);
-      setUsername(user);
-      sessionStorage.setItem(SESSION_KEY, 'true');
-      sessionStorage.setItem(SESSION_KEY + '_user', user);
-      return true;
+  // Listen to Supabase auth changes
+  useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setLoading(false);
+      return;
     }
-    return false;
+
+    // Get the current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Subscribe to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      },
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const logout = useCallback(() => {
-    setIsAuthenticated(false);
-    setUsername(null);
-    sessionStorage.removeItem(SESSION_KEY);
-    sessionStorage.removeItem(SESSION_KEY + '_user');
-  }, []);
-
-  const changePassword = useCallback(
-    (currentPassword: string, newPassword: string): boolean => {
-      const creds = getCredentials();
-      if (simpleHash(currentPassword) === creds.passwordHash) {
-        creds.passwordHash = simpleHash(newPassword);
-        saveCredentials(creds);
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    if (!isSupabaseConfigured()) {
+      const creds = lsGetCreds();
+      if (email === creds.username && simpleHash(password) === creds.passwordHash) {
+        setLsAuth(true);
+        setLsUser(email);
+        sessionStorage.setItem(LS_SESSION_KEY, 'true');
+        sessionStorage.setItem(LS_SESSION_KEY + '_user', email);
         return true;
       }
       return false;
-    },
-    [],
-  );
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return !error;
+  }, []);
+
+  const logout = useCallback(async () => {
+    if (!isSupabaseConfigured()) {
+      setLsAuth(false);
+      setLsUser(null);
+      sessionStorage.removeItem(LS_SESSION_KEY);
+      sessionStorage.removeItem(LS_SESSION_KEY + '_user');
+      return;
+    }
+
+    await supabase.auth.signOut();
+  }, []);
+
+  const changePassword = useCallback(async (newPassword: string): Promise<boolean> => {
+    if (!isSupabaseConfigured()) {
+      const creds = lsGetCreds();
+      creds.passwordHash = simpleHash(newPassword);
+      localStorage.setItem(LS_AUTH_KEY, JSON.stringify(creds));
+      return true;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return !error;
+  }, []);
+
+  const isAuthenticated = isSupabaseConfigured() ? !!user : lsAuth;
+  const username = isSupabaseConfigured() ? (user?.email ?? null) : lsUser;
 
   return (
     <AdminAuthContext.Provider
-      value={{ isAuthenticated, username, login, logout, changePassword }}
+      value={{ isAuthenticated, username, loading, login, logout, changePassword }}
     >
       {children}
     </AdminAuthContext.Provider>

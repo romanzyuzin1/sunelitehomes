@@ -1,27 +1,44 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
-import { Shield, Eye, EyeOff } from 'lucide-react';
+import { Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export function AdminLogin() {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAdminAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAdminAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-brand-navy flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
+      </div>
+    );
+  }
 
   if (isAuthenticated) {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    if (login(email, password)) {
-      navigate('/admin/dashboard');
-    } else {
-      setError('Credenciales incorrectas. Inténtelo de nuevo.');
+    setSubmitting(true);
+    try {
+      const ok = await login(email, password);
+      if (ok) {
+        navigate('/admin/dashboard');
+      } else {
+        setError('Credenciales incorrectas. Inténtelo de nuevo.');
+      }
+    } catch {
+      setError('Error de conexión. Inténtelo más tarde.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -95,9 +112,11 @@ export function AdminLogin() {
 
           <button
             type="submit"
-            className="w-full py-4 bg-brand-gold text-brand-navy font-montserrat font-semibold uppercase tracking-wider hover:bg-brand-gold/90 transition-colors"
+            disabled={submitting}
+            className="w-full py-4 bg-brand-gold text-brand-navy font-montserrat font-semibold uppercase tracking-wider hover:bg-brand-gold/90 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
           >
-            Iniciar Sesión
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {submitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </button>
 
           <p className="text-center text-white/40 font-montserrat text-xs">
