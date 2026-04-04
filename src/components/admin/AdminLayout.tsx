@@ -11,6 +11,8 @@ import {
   Menu,
   X,
   ChevronLeft,
+  Users,
+  Globe,
 } from 'lucide-react';
 
 export function AdminLayout() {
@@ -41,7 +43,9 @@ export function AdminLayout() {
   const navItems = [
     { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Propiedades' },
     { to: '/admin/propiedades/nueva', icon: Plus, label: 'Nuevo Inmueble' },
+    { to: '/admin/contactos', icon: Users, label: 'Contactos' },
     { to: '/admin/importar', icon: FileUp, label: 'Importar XML' },
+    { to: '/admin/portales', icon: Globe, label: 'Portales y Email' },
     { to: '/admin/configuracion', icon: Settings, label: 'Configuración' },
   ];
 

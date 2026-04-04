@@ -22,6 +22,8 @@ export interface Property {
   surfaceArea: {
     built: number;
     plot: number;
+    usable: number;
+    habitable: number;
   };
   energyRating: {
     consumption: string;
@@ -31,6 +33,19 @@ export interface Property {
   features: string[];
   status: string;
   images: string[];
+
+  // Extended fields (Engel & Völkers style)
+  rooms?: number;
+  ensuiteBaths?: number;
+  hasPatio?: boolean;
+  hasStudio?: boolean;
+  hasServiceRoom?: boolean;
+  parkingSpaces?: number;
+  orientation?: string;
+  floor?: string;
+  hasLift?: boolean;
+  heatingType?: string;
+  furnished?: string;
 }
 
 export const properties: Property[] = [
@@ -55,7 +70,7 @@ export const properties: Property[] = [
     beds: 2,
     baths: 2,
     pool: false,
-    surfaceArea: { built: 102, plot: 89 },
+    surfaceArea: { built: 102, plot: 89, usable: 0, habitable: 0 },
     energyRating: { consumption: 'none', emissions: 'none' },
     description:
       'Este hermoso apartamento de 2 dormitorios está ubicado en el corazón de Madrid, en una de las zonas más emblemáticas de la ciudad. Su ubicación estratégica ofrece una experiencia de vida única, con todos los servicios y comodidades al alcance de tu mano.\n\nAl ingresar a la propiedad, te sorprenderá su diseño interior elegante y funcional. El amplio salón comedor es el lugar perfecto para relajarte y disfrutar de momentos especiales con familia y amigos. Grandes ventanas permiten que la luz natural llene el espacio, creando un ambiente cálido y acogedor. Desde la sala de estar, se accede a un balcón privado con vistas a las bulliciosas calles de Madrid, ideal para disfrutar de una taza de café por la mañana o una copa de vino al atardecer.\n\nLa cocina está totalmente equipada con electrodomésticos modernos y ofrece un espacio cómodo para preparar tus comidas favoritas. Los dos dormitorios son luminosos y espaciosos, con armarios empotrados que proporcionan suficiente espacio de almacenamiento. El baño principal es elegante y funcional, con una bañera y acabados de alta calidad.\n\nEste apartamento se encuentra en un edificio bien mantenido con ascensor y una plaza de garaje privada. La propiedad también ofrece una cuota de comunidad mensual que cubre los servicios comunes y el mantenimiento del edificio.\n\nLa ubicación en el centro de Madrid es insuperable. Estás a pocos pasos de los principales puntos de interés de la ciudad, como el Parque del Retiro, el Museo del Prado, el Palacio Real y la Puerta del Sol. Además, la zona está repleta de restaurantes, tiendas, teatros y vida nocturna, lo que te permite disfrutar de la rica cultura y entretenimiento que Madrid tiene para ofrecer.\n\nNo pierdas la oportunidad de adquirir este encantador apartamento en el corazón de Madrid. Es la elección perfecta para aquellos que desean vivir la vida urbana con estilo y comodidad.',
@@ -103,7 +118,7 @@ export const properties: Property[] = [
     beds: 2,
     baths: 2,
     pool: false,
-    surfaceArea: { built: 125, plot: 107 },
+    surfaceArea: { built: 125, plot: 107, usable: 0, habitable: 0 },
     energyRating: { consumption: 'b', emissions: 'c' },
     description:
       'Este impresionante ático se encuentra en una de las ubicaciones más codiciadas de Madrid, en la prestigiosa Avenida América. Con una vista panorámica de la ciudad, este ático ofrece un oasis de lujo y tranquilidad en medio del bullicio de la ciudad.\n\nCaracterísticas destacadas:\n\nAmplia terraza con vistas espectaculares: El punto culminante de esta propiedad es su gran terraza privada, desde la cual podrás disfrutar de vistas panorámicas de Madrid, incluyendo emblemáticos lugares como la Plaza de Cibeles y el Parque de El Retiro. Es el lugar perfecto para relajarse o entretener a amigos y familiares.\n\nDiseño elegante y moderno: El interior del ático ha sido diseñado con un estilo contemporáneo y elegante. Los espacios están llenos de luz natural gracias a las amplias ventanas que permiten disfrutar de las vistas desde el interior. Los acabados de alta calidad y los detalles de diseño hacen de este ático un lugar verdaderamente exclusivo.\n\nEspacios amplios y funcionales: Con una distribución inteligente, este ático cuenta con una amplia sala de estar, una cocina totalmente equipada con electrodomésticos de última generación y tres dormitorios espaciosos, cada uno con su propio baño privado.\n\nZona bien comunicada: La ubicación en Avenida América te ofrece una excelente conectividad con el transporte público, lo que facilita el acceso a cualquier parte de la ciudad. Además, está rodeado de restaurantes, tiendas de lujo y todo tipo de servicios.\n\nAparcamiento y trastero: El ático incluye dos plazas de aparcamiento y un trastero, lo que hace que la vida en el centro de la ciudad sea aún más cómoda.\n\nEste "Precioso ático en Avenida América" es la elección perfecta para quienes buscan un estilo de vida lujoso y sofisticado en el corazón de Madrid.',
@@ -141,7 +156,7 @@ export const properties: Property[] = [
     beds: 3,
     baths: 2,
     pool: true,
-    surfaceArea: { built: 92, plot: 89 },
+    surfaceArea: { built: 92, plot: 89, usable: 0, habitable: 0 },
     energyRating: { consumption: 'none', emissions: 'none' },
     description:
       '¿Buscas comprar un piso amplio y bien equipado en Getafe? ¡No busques más! Tenemos la propiedad perfecta para ti. Este encantador piso, situado en Getafe, ya está a la venta. Con sus tres dormitorios, dos baños, cocina y salón, esta propiedad te ofrece todo lo que necesitas para vivir cómodamente.\n\nEl piso tiene una superficie de 89,00 metros cuadrados, lo que proporciona un amplio espacio para que tú y tu familia os relajéis y disfrutéis. El salón es luminoso y ventilado, y ofrece un espacio acogedor para relajarse después de un largo día. La cocina es moderna y está totalmente equipada, por lo que será un placer preparar deliciosas comidas para tus seres queridos.\n\nUna de las características más destacadas de este apartamento es la terraza, donde podrás tomar el sol y disfrutar del aire fresco. Es el lugar perfecto para tomar el café de la mañana o celebrar una pequeña reunión con amigos y familiares. Además, el apartamento dispone de garaje, para que tengas un lugar cómodo y seguro donde aparcar tu vehículo.\n\nSituado en Getafe, este apartamento ofrece fácil acceso a diversos servicios e instalaciones. Encontrarás colegios, supermercados, parques y restaurantes muy cerca, lo que lo convierte en un lugar cómodo y deseable para vivir.\n\nNo dejes pasar esta increíble oportunidad de poseer un fantástico piso en Getafe. Tanto si vas a comprar por primera vez como si quieres mejorar tu vivienda actual, esta propiedad cumple todos los requisitos. Asegúrate de concertar una visita y comprueba por ti mismo el potencial de este piso. ¡Actúa rápido antes de que sea demasiado tarde!',
@@ -181,7 +196,7 @@ export const properties: Property[] = [
     beds: 2,
     baths: 1,
     pool: true,
-    surfaceArea: { built: 95, plot: 87 },
+    surfaceArea: { built: 95, plot: 87, usable: 0, habitable: 0 },
     energyRating: { consumption: 'b', emissions: 'b' },
     description:
       'Bienvenido a tu retiro costero perfecto en Bakio. Este impresionante apartamento completamente reformado te ofrece una oportunidad única de disfrutar de la vida en una de las localidades más hermosas de la costa vasca. Con una ubicación privilegiada a pocos pasos de la playa y vistas panorámicas al mar, este apartamento de dos habitaciones te brinda una combinación de comodidad y estilo inigualable.\n\nDiseño Moderno y Luminoso: La reforma de este apartamento ha creado un espacio abierto y lleno de luz que te hará sentir en casa desde el primer momento. Los tonos neutros y los acabados de alta calidad aportan elegancia a cada rincón.\n\nCocina Totalmente Equipada: La cocina de diseño es un sueño hecho realidad para los amantes de la gastronomía, con electrodomésticos de acero inoxidable y encimeras de granito. Es el lugar perfecto para preparar deliciosas comidas y disfrutarlas en el comedor contiguo.\n\nVistas al Mar: Desde el balcón privado, podrás deleitarte con las impresionantes vistas al mar y escuchar las olas romper en la playa. Es un lugar ideal para relajarte con una copa de vino al atardecer.\n\nHabitaciones Amplias: Las dos habitaciones ofrecen espacio más que suficiente para el descanso y el almacenamiento. La habitación principal cuenta con un baño en suite.\n\nUbicación Perfecta: Este apartamento se encuentra en el centro de Bakio, a pocos pasos de la playa, tiendas, restaurantes y todas las comodidades que esta encantadora localidad costera tiene para ofrecer.',
@@ -225,7 +240,7 @@ export const properties: Property[] = [
     beds: 2,
     baths: 1,
     pool: true,
-    surfaceArea: { built: 82, plot: 75 },
+    surfaceArea: { built: 82, plot: 75, usable: 0, habitable: 0 },
     energyRating: { consumption: 'a', emissions: 'a' },
     description:
       'Este excepcional piso de tres habitaciones en Estepona te ofrece una experiencia única de vida junto al mar. Desde su amplio balcón, disfrutarás de vistas inigualables del Mar Mediterráneo, proporcionando una sensación de paz y lujo en cada rincón. El diseño contemporáneo y los acabados de alta calidad se combinan para crear un ambiente luminoso y elegante. La cocina de chef, las habitaciones espaciosas y las comodidades de lujo hacen de este piso una joya en la codiciada Costa del Sol. Ubicado a pocos minutos del centro de Estepona, con tiendas, restaurantes y playas a tu alcance, esta propiedad es ideal para aquellos que buscan la vida costera de ensueño.\n\n¡Contáctanos ahora para descubrir este paraíso frente al mar en persona!',
@@ -271,7 +286,7 @@ export const properties: Property[] = [
     beds: 3,
     baths: 1,
     pool: false,
-    surfaceArea: { built: 100, plot: 95 },
+    surfaceArea: { built: 100, plot: 95, usable: 0, habitable: 0 },
     energyRating: { consumption: 'a', emissions: 'a' },
     description:
       'Este luminoso y moderno piso de obra nueva es una oportunidad excepcional para aquellos que buscan una residencia contemporánea en el corazón de Santander. Con un diseño fresco y elegante, este piso cuenta con espacios abiertos que permiten la entrada de luz natural, creando un ambiente cálido y acogedor. Las comodidades de última generación y los acabados de alta calidad definen esta propiedad. Disfrutarás de la conveniencia de vivir en una ubicación céntrica, con tiendas, restaurantes y lugares de interés cultural a pocos pasos de tu puerta. Este piso de obra nueva está disponible para alquiler y es la opción perfecta para quienes desean la combinación de modernidad y estilo en uno de los lugares más emblemáticos de Santander. ¡No dejes pasar la oportunidad de ser el primero en vivir en esta joya de la arquitectura contemporánea!',

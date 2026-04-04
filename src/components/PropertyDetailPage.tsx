@@ -4,9 +4,13 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../i18n/translations';
 import { formatPrice } from '../data/properties';
 import { fetchPropertyById } from '../lib/propertyService';
+import { createContact } from '../lib/contactService';
+import { addPropertyInterest } from '../lib/contactService';
+import { createEmptyContact } from '../data/contacts';
 import type { Property } from '../data/properties';
 import { LuxuryNavigation } from './LuxuryNavigation';
 import { LuxuryFooter } from './LuxuryFooter';
+import { PublicPropertyMap } from './PublicPropertyMap';
 import {
   ArrowLeft,
   Bed,
@@ -46,6 +50,10 @@ import {
   Shirt,
   Music,
   Sparkles,
+  Mail,
+  Send,
+  Loader2,
+  CheckCircle,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -478,24 +486,24 @@ export function PropertyDetailPage() {
                   <h3 className="font-playfair text-xl text-brand-navy mb-4">
                     {t.location}
                   </h3>
-                  <div className="aspect-square bg-gray-100 border border-gray-200 rounded-lg overflow-hidden">
-                    <iframe
-                      title="Property Location"
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={`https://www.google.com/maps?q=${property.location.latitude},${property.location.longitude}&z=15&output=embed`}
-                    />
-                  </div>
-                  <p className="text-gray-400 font-montserrat text-xs mt-2">
-                    {property.location.address}
-                  </p>
+                  <PublicPropertyMap
+                    latitude={property.location.latitude}
+                    longitude={property.location.longitude}
+                    propertyId={property.id}
+                    radius={500}
+                    label={property.town ? `Zona aproximada — ${property.town}` : 'Ubicación aproximada'}
+                  />
                 </div>
               )}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── Contact Form ── */}
+      <section id="contacto" className="py-16 bg-brand-navy">
+        <div className="max-w-3xl mx-auto px-6">
+          <ContactForm propertyId={property.id} propertyTitle={property.title} propertyRef={property.ref} language={language} />
         </div>
       </section>
 
@@ -550,5 +558,191 @@ export function PropertyDetailPage() {
 
       <LuxuryFooter />
     </>
+  );
+}
+
+// ── Contact form that auto-creates a CRM contact + interest ──
+
+interface ContactFormProps {
+  propertyId: number;
+  propertyTitle: string;
+  propertyRef: string;
+  language: 'es' | 'en';
+}
+
+function ContactForm({ propertyId, propertyTitle, propertyRef, language }: ContactFormProps) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+
+  const t = language === 'es'
+    ? {
+        title: 'Solicitar información',
+        subtitle: `¿Te interesa esta propiedad? Déjanos tus datos y te contactaremos lo antes posible.`,
+        name: 'Nombre completo *',
+        email: 'Email *',
+        phone: 'Teléfono',
+        message: 'Mensaje',
+        messagePlaceholder: `Me interesa la propiedad ${propertyRef}...`,
+        send: 'Enviar solicitud',
+        sending: 'Enviando...',
+        success: '¡Solicitud enviada!',
+        successDesc: 'Nos pondremos en contacto contigo pronto.',
+        errorRequired: 'Por favor completa nombre y email.',
+      }
+    : {
+        title: 'Request information',
+        subtitle: `Interested in this property? Leave your details and we\'ll contact you as soon as possible.`,
+        name: 'Full name *',
+        email: 'Email *',
+        phone: 'Phone',
+        message: 'Message',
+        messagePlaceholder: `I'm interested in property ${propertyRef}...`,
+        send: 'Send request',
+        sending: 'Sending...',
+        success: 'Request sent!',
+        successDesc: 'We\'ll be in touch soon.',
+        errorRequired: 'Please fill in name and email.',
+      };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!name.trim() || !email.trim()) {
+      setError(t.errorRequired);
+      return;
+    }
+
+    setSending(true);
+    try {
+      // Split name into first/last
+      const parts = name.trim().split(/\s+/);
+      const firstName = parts[0] || '';
+      const lastName = parts.slice(1).join(' ') || '';
+
+      // Create the contact as a buyer
+      const contact = createEmptyContact();
+      contact.firstName = firstName;
+      contact.lastName = lastName;
+      contact.email = email.trim();
+      contact.phone = phone.trim();
+      contact.isBuyer = true;
+      contact.isOwner = false;
+      contact.interestType = 'buy';
+      contact.source = 'Web';
+      contact.notes = message.trim()
+        ? `[${propertyTitle} — ${propertyRef}] ${message.trim()}`
+        : `Interesado en ${propertyTitle} (${propertyRef})`;
+
+      const saved = await createContact(contact);
+
+      // Link interest to this property
+      await addPropertyInterest(propertyId, saved.id, 'medium', message.trim());
+
+      setSent(true);
+    } catch (err) {
+      console.error('Error creating contact:', err);
+      setError(language === 'es' ? 'Error al enviar. Inténtalo de nuevo.' : 'Error sending. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (sent) {
+    return (
+      <div className="text-center py-8">
+        <CheckCircle className="w-16 h-16 text-brand-gold mx-auto mb-4" />
+        <h3 className="font-playfair text-2xl text-white mb-2">{t.success}</h3>
+        <p className="font-montserrat text-white/60">{t.successDesc}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 className="font-playfair text-2xl md:text-3xl text-white text-center mb-2">
+        {t.title}
+      </h2>
+      <p className="font-montserrat text-white/60 text-center text-sm mb-8 max-w-lg mx-auto">
+        {t.subtitle}
+      </p>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-montserrat text-xs text-white/60 mb-1">{t.name}</label>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded text-white font-montserrat text-sm placeholder:text-white/30 focus:outline-none focus:border-brand-gold"
+            />
+          </div>
+          <div>
+            <label className="block font-montserrat text-xs text-white/60 mb-1">{t.email}</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded text-white font-montserrat text-sm placeholder:text-white/30 focus:outline-none focus:border-brand-gold"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block font-montserrat text-xs text-white/60 mb-1">{t.phone}</label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded text-white font-montserrat text-sm placeholder:text-white/30 focus:outline-none focus:border-brand-gold"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block font-montserrat text-xs text-white/60 mb-1">{t.message}</label>
+          <textarea
+            rows={3}
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            placeholder={t.messagePlaceholder}
+            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded text-white font-montserrat text-sm placeholder:text-white/30 focus:outline-none focus:border-brand-gold resize-none"
+          />
+        </div>
+
+        {error && (
+          <p className="font-montserrat text-sm text-red-400">{error}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={sending}
+          className="w-full py-4 bg-brand-gold text-brand-navy font-montserrat font-semibold uppercase tracking-wider text-sm hover:bg-brand-gold/90 transition-colors rounded flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {sending ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" /> {t.sending}
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" /> {t.send}
+            </>
+          )}
+        </button>
+      </form>
+    </div>
   );
 }

@@ -33,6 +33,7 @@ export interface Database {
           status: string;
           images: string[];
           agent_id: string | null;
+          owner_contact_id: number | null;
         };
         Insert: {
           id?: number;
@@ -63,6 +64,7 @@ export interface Database {
           status?: string;
           images?: string[];
           agent_id?: string | null;
+          owner_contact_id?: number | null;
         };
         Update: {
           id?: number;
@@ -93,6 +95,107 @@ export interface Database {
           status?: string;
           images?: string[];
           agent_id?: string | null;
+          owner_contact_id?: number | null;
+        };
+      };
+      contacts: {
+        Row: {
+          id: number;
+          created_at: string;
+          updated_at: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+          phone: string;
+          phone2: string;
+          is_owner: boolean;
+          is_buyer: boolean;
+          owner_intent: string;
+          interest_type: string;
+          budget_min: number | null;
+          budget_max: number | null;
+          pref_beds: number | null;
+          pref_baths: number | null;
+          pref_zones: string[];
+          pref_types: string[];
+          notes: string;
+          source: string;
+          status: string;
+          agent_id: string | null;
+        };
+        Insert: {
+          id?: number;
+          created_at?: string;
+          updated_at?: string;
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+          phone?: string;
+          phone2?: string;
+          is_owner?: boolean;
+          is_buyer?: boolean;
+          owner_intent?: string;
+          interest_type?: string;
+          budget_min?: number | null;
+          budget_max?: number | null;
+          pref_beds?: number | null;
+          pref_baths?: number | null;
+          pref_zones?: string[];
+          pref_types?: string[];
+          notes?: string;
+          source?: string;
+          status?: string;
+          agent_id?: string | null;
+        };
+        Update: {
+          id?: number;
+          created_at?: string;
+          updated_at?: string;
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+          phone?: string;
+          phone2?: string;
+          is_owner?: boolean;
+          is_buyer?: boolean;
+          owner_intent?: string;
+          interest_type?: string;
+          budget_min?: number | null;
+          budget_max?: number | null;
+          pref_beds?: number | null;
+          pref_baths?: number | null;
+          pref_zones?: string[];
+          pref_types?: string[];
+          notes?: string;
+          source?: string;
+          status?: string;
+          agent_id?: string | null;
+        };
+      };
+      property_interests: {
+        Row: {
+          id: number;
+          property_id: number;
+          contact_id: number;
+          created_at: string;
+          interest_level: string;
+          notes: string;
+        };
+        Insert: {
+          id?: number;
+          property_id: number;
+          contact_id: number;
+          created_at?: string;
+          interest_level?: string;
+          notes?: string;
+        };
+        Update: {
+          id?: number;
+          property_id?: number;
+          contact_id?: number;
+          created_at?: string;
+          interest_level?: string;
+          notes?: string;
         };
       };
     };

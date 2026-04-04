@@ -90,7 +90,8 @@ function Hero() {
           src="/Fotos-optimized/Video/landing_poster.webp"
           alt=""
           className="w-full h-full object-cover"
-          fetchPriority="high"
+          // @ts-ignore – valid HTML attribute, React 18 warns on camelCase
+          fetchpriority="high"
         />
       </div>
         

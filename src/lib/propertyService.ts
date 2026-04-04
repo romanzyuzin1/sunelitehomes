@@ -42,7 +42,12 @@ function rowToProperty(row: DbRow): Property {
     beds: row.beds,
     baths: row.baths,
     pool: row.pool,
-    surfaceArea: { built: row.surface_built, plot: row.surface_plot },
+    surfaceArea: {
+      built: row.surface_built,
+      plot: row.surface_plot,
+      usable: (row as any).surface_usable ?? 0,
+      habitable: (row as any).surface_habitable ?? 0,
+    },
     energyRating: {
       consumption: row.energy_consumption,
       emissions: row.energy_emissions,
@@ -51,11 +56,39 @@ function rowToProperty(row: DbRow): Property {
     features: row.features,
     status: row.status,
     images: row.images,
+    rooms: (row as any).rooms ?? 0,
+    ensuiteBaths: (row as any).ensuite_baths ?? 0,
+    hasPatio: (row as any).has_patio ?? false,
+    hasStudio: (row as any).has_studio ?? false,
+    hasServiceRoom: (row as any).has_service_room ?? false,
+    parkingSpaces: (row as any).parking_spaces ?? 0,
+    orientation: (row as any).orientation ?? '',
+    floor: (row as any).floor ?? '',
+    hasLift: (row as any).has_lift ?? false,
+    heatingType: (row as any).heating_type ?? '',
+    furnished: (row as any).furnished ?? '',
   };
 }
 
-function propertyToInsert(p: Property): DbInsert {
-  return {
+/** Flag: whether the extended columns (migration_property_extended.sql) exist. */
+let _extendedColumnsAvailable: boolean | null = null;
+
+async function hasExtendedColumns(): Promise<boolean> {
+  if (_extendedColumnsAvailable !== null) return _extendedColumnsAvailable;
+  try {
+    const { error } = await supabase
+      .from('properties')
+      .select('ensuite_baths')
+      .limit(1);
+    _extendedColumnsAvailable = !error;
+  } catch {
+    _extendedColumnsAvailable = false;
+  }
+  return _extendedColumnsAvailable;
+}
+
+function propertyToInsert(p: Property, includeExtended = true): Record<string, unknown> {
+  const base: Record<string, unknown> = {
     title: p.title,
     ref: p.ref,
     price: p.price,
@@ -81,6 +114,26 @@ function propertyToInsert(p: Property): DbInsert {
     status: p.status,
     images: p.images,
   };
+
+  if (includeExtended) {
+    Object.assign(base, {
+      surface_usable: p.surfaceArea.usable,
+      surface_habitable: p.surfaceArea.habitable,
+      rooms: p.rooms ?? 0,
+      ensuite_baths: p.ensuiteBaths ?? 0,
+      has_patio: p.hasPatio ?? false,
+      has_studio: p.hasStudio ?? false,
+      has_service_room: p.hasServiceRoom ?? false,
+      parking_spaces: p.parkingSpaces ?? 0,
+      orientation: p.orientation ?? '',
+      floor: p.floor ?? '',
+      has_lift: p.hasLift ?? false,
+      heating_type: p.heatingType ?? '',
+      furnished: p.furnished ?? '',
+    });
+  }
+
+  return base;
 }
 
 // ─── localStorage fallback (keeps existing behaviour) ────────────────
@@ -156,10 +209,11 @@ export async function createProperty(property: Property): Promise<Property> {
     return property;
   }
 
-  const row = propertyToInsert(property);
+  const ext = await hasExtendedColumns();
+  const row = propertyToInsert(property, ext);
   const { data, error } = await supabase
     .from('properties')
-    .insert(row)
+    .insert(row as any)
     .select()
     .single();
 
@@ -186,10 +240,11 @@ export async function updatePropertyById(
     return property;
   }
 
-  const row = propertyToInsert(property);
+  const ext = await hasExtendedColumns();
+  const row = propertyToInsert(property, ext);
   const { data, error } = await supabase
     .from('properties')
-    .update(row)
+    .update(row as any)
     .eq('id', id)
     .select()
     .single();
@@ -231,10 +286,11 @@ export async function bulkInsertProperties(
     return properties.length;
   }
 
-  const rows = properties.map(propertyToInsert);
+  const ext = await hasExtendedColumns();
+  const rows = properties.map(p => propertyToInsert(p, ext));
   const { data, error } = await supabase
     .from('properties')
-    .upsert(rows, { onConflict: 'ref' })
+    .upsert(rows as any, { onConflict: 'ref' })
     .select();
 
   if (error) {
@@ -242,6 +298,34 @@ export async function bulkInsertProperties(
   }
 
   return data?.length ?? 0;
+}
+
+/** Fetch all properties owned by a given contact. */
+export async function fetchPropertiesByOwner(
+  contactId: number,
+): Promise<Property[]> {
+  if (!isSupabaseConfigured()) {
+    // localStorage fallback: check owner map
+    const map: Record<number, number | null> = JSON.parse(
+      localStorage.getItem('seh_property_owners') || '{}',
+    );
+    const ids = Object.entries(map)
+      .filter(([, ownerId]) => ownerId === contactId)
+      .map(([pid]) => Number(pid));
+    return lsLoad().filter(p => ids.includes(p.id));
+  }
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select('*')
+    .eq('owner_contact_id', contactId)
+    .order('id', { ascending: true });
+
+  if (error) {
+    console.error('[propertyService] fetchByOwner error:', error);
+    return [];
+  }
+  return (data ?? []).map(rowToProperty);
 }
 
 /** Create a blank property shell (for the editor form). */
@@ -263,11 +347,22 @@ export function createEmptyProperty(): Property {
     beds: 0,
     baths: 0,
     pool: false,
-    surfaceArea: { built: 0, plot: 0 },
+    surfaceArea: { built: 0, plot: 0, usable: 0, habitable: 0 },
     energyRating: { consumption: 'none', emissions: 'none' },
     description: '',
     features: [],
     status: 'disponible',
     images: [],
+    rooms: 0,
+    ensuiteBaths: 0,
+    hasPatio: false,
+    hasStudio: false,
+    hasServiceRoom: false,
+    parkingSpaces: 0,
+    orientation: '',
+    floor: '',
+    hasLift: false,
+    heatingType: '',
+    furnished: '',
   };
 }

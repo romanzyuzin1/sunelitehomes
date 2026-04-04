@@ -181,9 +181,12 @@ export function AdminDashboard() {
                           )}
                         </div>
                         <div>
-                          <p className="font-montserrat text-sm font-medium text-gray-800 line-clamp-1">
+                          <Link
+                            to={`/admin/propiedades/${property.id}/detalle`}
+                            className="font-montserrat text-sm font-medium text-gray-800 line-clamp-1 hover:text-brand-gold transition-colors"
+                          >
                             {property.title}
-                          </p>
+                          </Link>
                           <p className="font-montserrat text-xs text-gray-400">
                             Ref: {property.ref} · {property.type}
                           </p>
@@ -228,9 +231,9 @@ export function AdminDashboard() {
                           <ExternalLink className="w-4 h-4" />
                         </Link>
                         <Link
-                          to={`/admin/propiedades/${property.id}`}
+                          to={`/admin/propiedades/${property.id}/detalle`}
                           className="p-2 text-gray-400 hover:text-brand-navy transition-colors"
-                          title="Editar"
+                          title="Ver ficha"
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
