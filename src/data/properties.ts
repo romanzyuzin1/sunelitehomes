@@ -30,6 +30,9 @@ export interface Property {
     emissions: string;
   };
   description: string;
+  descriptionZone: string;
+  privateNotes: string;
+  isPublic: boolean;
   features: string[];
   status: string;
   images: string[];
@@ -79,6 +82,9 @@ export const properties: Property[] = [
       'parabólica', 'pista de fútbol', 'txoko', 'video portero', 'garaje doble',
       'linea teléfono', 'piscina de comunidad', 'sotano', 'buhardilla', 'vallado',
     ],
+    descriptionZone: '',
+    privateNotes: '',
+    isPublic: true,
     status: 'disponible',
     images: [
       'https://nunibU4IP5.inmocms.com/store/inmuebles/653b03716a69e_Pagina_web_inmobiliaria_0.jpeg',
@@ -127,6 +133,9 @@ export const properties: Property[] = [
       'calefacción central', 'calefacción gasoil', 'interior', 'deposito de agua',
       'diafano', 'garaje doble', 'lavanderia',
     ],
+    descriptionZone: '',
+    privateNotes: '',
+    isPublic: true,
     status: 'disponible',
     images: [
       'https://nunibU4IP5.inmocms.com/store/inmuebles/653b0e528091a_CRM_inmobiliario_1.jpg',
@@ -164,6 +173,9 @@ export const properties: Property[] = [
       'hilo musical', 'piscina', 'pista de pádel', 'txoko', 'lavanderia',
       'sotano', 'montaña', 'parada autobus', 'tranvia', 'hospitales',
     ],
+    descriptionZone: '',
+    privateNotes: '',
+    isPublic: true,
     status: 'disponible',
     images: [
       'https://nunibU4IP5.inmocms.com/store/inmuebles/653b15e40a975_WEB_ INMOBILIARIA_CRM_1.jpeg',
@@ -206,6 +218,9 @@ export const properties: Property[] = [
       'urbanización', 'vistas', 'armario empotrado', 'garaje doble',
       'primera linea', 'mirador', 'montaña',
     ],
+    descriptionZone: '',
+    privateNotes: '',
+    isPublic: true,
     status: 'disponible',
     images: [
       'https://nunibU4IP5.inmocms.com/store/inmuebles/65457e0b2f831_CREAR-WEB-INMOBILIARIA-2.jpg',
@@ -250,6 +265,9 @@ export const properties: Property[] = [
       'piscina', 'video portero', 'vistas', 'primera linea', 'mirador',
       'vistas al mar', 'costa', 'colegios',
     ],
+    descriptionZone: '',
+    privateNotes: '',
+    isPublic: true,
     status: 'disponible',
     images: [
       'https://nunibU4IP5.inmocms.com/store/inmuebles/654582bdb2c7d_pagina-web-inmobiliaria-10.jpg',
@@ -297,6 +315,9 @@ export const properties: Property[] = [
       'armario empotrado', 'galería', 'garaje doble', 'linea teléfono',
       'bomba frio calor', 'centros comerciales', 'zonas infantiles', 'arboles',
     ],
+    descriptionZone: '',
+    privateNotes: '',
+    isPublic: true,
     status: 'disponible',
     images: [
       'https://nunibU4IP5.inmocms.com/store/inmuebles/65458abee4dd7_software-inmobiliario-44.jpg',

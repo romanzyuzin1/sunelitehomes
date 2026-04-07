@@ -29,6 +29,9 @@ export interface Database {
           energy_consumption: string;
           energy_emissions: string;
           description: string;
+          description_zone: string;
+          private_notes: string;
+          is_public: boolean;
           features: string[];
           status: string;
           images: string[];
@@ -60,6 +63,9 @@ export interface Database {
           energy_consumption?: string;
           energy_emissions?: string;
           description?: string;
+          description_zone?: string;
+          private_notes?: string;
+          is_public?: boolean;
           features?: string[];
           status?: string;
           images?: string[];
@@ -91,6 +97,9 @@ export interface Database {
           energy_consumption?: string;
           energy_emissions?: string;
           description?: string;
+          description_zone?: string;
+          private_notes?: string;
+          is_public?: boolean;
           features?: string[];
           status?: string;
           images?: string[];

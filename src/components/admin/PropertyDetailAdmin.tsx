@@ -30,8 +30,11 @@ import {
   Mail,
   Check,
   AlertTriangle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { EmailComposer } from './EmailComposer';
+import { MatchPanel } from './MatchPanel';
 import { generateExpose, type ExposeProgress, type ExposeResult } from '../../lib/exposeGenerator';
 import {
   sendEmail,
@@ -457,13 +460,60 @@ export function PropertyDetailAdmin() {
       {property.description && (
         <div className="bg-white shadow-sm rounded-lg p-6 mb-6">
           <h2 className="font-montserrat text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">
-            Descripción
+            Descripción del inmueble
           </h2>
           <p className="font-montserrat text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
             {property.description}
           </p>
         </div>
       )}
+
+      {/* ── Zone Description ── */}
+      {property.descriptionZone && property.descriptionZone.trim() && (
+        <div className="bg-white shadow-sm rounded-lg p-6 mb-6">
+          <h2 className="font-montserrat text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">
+            Descripción de la zona
+          </h2>
+          <p className="font-montserrat text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+            {property.descriptionZone}
+          </p>
+        </div>
+      )}
+
+      {/* ── Private Notes ── */}
+      {property.privateNotes && property.privateNotes.trim() && (
+        <div className="bg-amber-50 border border-amber-200 shadow-sm rounded-lg p-6 mb-6">
+          <h2 className="font-montserrat text-sm font-semibold uppercase tracking-wider text-amber-700 mb-3 flex items-center gap-2">
+            🔒 Nota privada
+          </h2>
+          <p className="font-montserrat text-sm text-amber-800 leading-relaxed whitespace-pre-wrap">
+            {property.privateNotes}
+          </p>
+        </div>
+      )}
+
+      {/* ── Visibility Status ── */}
+      <div className={`rounded-lg p-4 mb-6 flex items-center gap-3 ${
+        property.isPublic !== false
+          ? 'bg-green-50 border border-green-200'
+          : 'bg-amber-50 border border-amber-200'
+      }`}>
+        {property.isPublic !== false ? (
+          <>
+            <Eye className="w-5 h-5 text-green-600" />
+            <span className="font-montserrat text-sm text-green-700">
+              Este inmueble <strong>es visible</strong> en la web pública.
+            </span>
+          </>
+        ) : (
+          <>
+            <EyeOff className="w-5 h-5 text-amber-600" />
+            <span className="font-montserrat text-sm text-amber-700">
+              Este inmueble <strong>NO es visible</strong> en la web pública.
+            </span>
+          </>
+        )}
+      </div>
 
       {/* ── Features ── */}
       {property.features.length > 0 && (
@@ -647,6 +697,12 @@ export function PropertyDetailAdmin() {
           </div>
         )}
       </div>
+
+      {/* ── Match Panel ── */}
+      <MatchPanel
+        property={property}
+        existingInterestContactIds={interests.map(i => i.contactId)}
+      />
 
       {/* ── Email Composer Modal ── */}
       {showEmail && (

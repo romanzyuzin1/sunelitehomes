@@ -170,10 +170,10 @@ export function CollectionSection() {
         </div>
 
         {/* Inmuebles from CMS */}
-        {inmuebles.filter(p => p.images.length > 0).length > 0 && (
+        {inmuebles.filter(p => p.images.length > 0 && p.isPublic !== false).length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {inmuebles
-              .filter((p) => p.images.length > 0)
+              .filter((p) => p.images.length > 0 && p.isPublic !== false)
               .map((property) => (
                 <Link
                   to={`/inmueble/${property.id}`}

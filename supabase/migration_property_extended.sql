@@ -23,3 +23,10 @@ ALTER TABLE properties ADD COLUMN IF NOT EXISTS orientation text DEFAULT '';
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS floor text DEFAULT '';
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS heating_type text DEFAULT '';
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS furnished text DEFAULT '';
+
+-- Visibility toggle (public/private)
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS is_public boolean DEFAULT true;
+
+-- Zone description & private notes (separate from property description)
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS description_zone text DEFAULT '';
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS private_notes text DEFAULT '';

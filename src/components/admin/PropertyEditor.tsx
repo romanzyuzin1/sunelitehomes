@@ -35,24 +35,27 @@ import {
   Image as ImageIcon,
   Settings2,
   ChevronRight,
-  CheckCircle2,
   Building2,
   AlertCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
-import { uploadPropertyImages, deletePropertyImage } from '../../lib/imageUpload';
+import { uploadPropertyImages, deletePropertyImage, type UploadProgress } from '../../lib/imageUpload';
+import { SortableImageGrid } from './SortableImageGrid';
 import { EditorMap } from './EditorMap';
 
 /* -- Section definitions -- */
 const SECTIONS = [
-  { id: 'direccion', label: 'Direcci\u00f3n', icon: MapPin },
-  { id: 'datos', label: 'Datos b\u00e1sicos', icon: FileText },
-  { id: 'descripcion', label: 'Comentarios generales', icon: FileText },
+  { id: 'direccion', label: 'Dirección', icon: MapPin },
+  { id: 'datos', label: 'Datos básicos', icon: FileText },
+  { id: 'descripcion', label: 'Descripciones', icon: FileText },
   { id: 'superficies', label: 'Superficies y Habitaciones', icon: Maximize2 },
-  { id: 'caracteristicas', label: 'Caracter\u00edsticas', icon: Settings2 },
-  { id: 'energia', label: 'Informaci\u00f3n energ\u00e9tica', icon: Zap },
+  { id: 'caracteristicas', label: 'Características', icon: Settings2 },
+  { id: 'energia', label: 'Información energética', icon: Zap },
   { id: 'apartamento', label: 'Apartamento', icon: Building2 },
   { id: 'precio', label: 'Precio', icon: Euro },
-  { id: 'imagenes', label: 'Im\u00e1genes', icon: ImageIcon },
+  { id: 'imagenes', label: 'Imágenes', icon: ImageIcon },
+  { id: 'publicacion', label: 'Publicación', icon: Eye },
   { id: 'contactos', label: 'Contactos', icon: Users },
 ] as const;
 
@@ -107,7 +110,7 @@ function YesNoSelect({
       className={inputCls}
     >
       <option value="no">No</option>
-      <option value="si">S\u00ed</option>
+      <option value="si">Sí</option>
     </select>
   );
 }
@@ -124,11 +127,13 @@ export function PropertyEditor() {
   const [loading, setLoading] = useState(!isNew);
   const [newFeature, setNewFeature] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
-  const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+
+
 
   // Navigation
   const [activeSection, setActiveSection] = useState<SectionId>('direccion');
@@ -144,7 +149,7 @@ export function PropertyEditor() {
   // Validation & success state
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [createdPropertyId, setCreatedPropertyId] = useState<number | null>(null);
+
 
   const FIELD_SECTION: Record<string, SectionId> = {
     town: 'direccion',
@@ -198,7 +203,6 @@ export function PropertyEditor() {
   /* -- Field helpers -- */
   const updateField = <K extends keyof Property>(key: K, value: Property[K]) => {
     setProperty(prev => ({ ...prev, [key]: value }));
-    setSaved(false);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -224,12 +228,10 @@ export function PropertyEditor() {
       }
       if (isNew) {
         const created = await createProperty(toSave);
-        setSaved(true);
-        setCreatedPropertyId(created.id);
+        navigate(`/admin/propiedades/${created.id}/detalle`);
       } else {
         await updatePropertyById(toSave.id, toSave);
-        setProperty(toSave);
-        setSaved(true);
+        navigate(`/admin/propiedades/${toSave.id}/detalle`);
       }
     } catch (err) {
       console.error('Error saving property:', err);
@@ -274,8 +276,18 @@ export function PropertyEditor() {
     if (fileArray.length === 0) return;
     setUploading(true);
     setUploadError(null);
+    setUploadProgress(null);
+
     try {
-      const urls = await uploadPropertyImages(fileArray, property.ref || 'tmp');
+      const urls = await uploadPropertyImages(
+        fileArray,
+        property.ref || 'tmp',
+        (progress) => {
+          setUploadProgress({ ...progress });
+          // When a photo finishes, add its URL immediately
+          // (we'll do the final merge below)
+        },
+      );
       if (urls.length > 0) {
         updateField('images', [...property.images, ...urls]);
       }
@@ -287,6 +299,7 @@ export function PropertyEditor() {
       setUploadError(err?.message || 'Error al subir las imágenes. Comprueba la configuración de Supabase Storage.');
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -297,6 +310,8 @@ export function PropertyEditor() {
       handleFileUpload(e.dataTransfer.files);
     }
   };
+
+
 
   /* -- Navigation helpers -- */
   const visibleSections = SECTIONS.filter(
@@ -462,8 +477,8 @@ export function PropertyEditor() {
             className={inputCls}
           >
             {[
-              'Casa', 'Piso', '\u00c1tico', 'Chalet', 'Villa',
-              'D\u00faplex', 'Estudio', 'Local', 'Terreno', 'Oficina', 'Nave',
+              'Casa', 'Piso', 'Ático', 'Chalet', 'Villa',
+              'Dúplex', 'Estudio', 'Local', 'Terreno', 'Oficina', 'Nave',
             ].map(t => (
               <option key={t} value={t}>{t}</option>
             ))}
@@ -496,15 +511,53 @@ export function PropertyEditor() {
   );
 
   const renderDescripcion = () => (
-    <div className="space-y-4">
-      <h2 className={sectionTitleCls}>Comentarios generales</h2>
-      <textarea
-        value={property.description}
-        onChange={e => updateField('description', e.target.value)}
-        rows={10}
-        className={`${inputCls} resize-y`}
-        placeholder="Describe el inmueble en detalle..."
-      />
+    <div className="space-y-6">
+      <h2 className={sectionTitleCls}>Descripciones</h2>
+
+      {/* Descripción del inmueble */}
+      <div>
+        <label className={labelCls}>Descripción del inmueble</label>
+        <textarea
+          value={property.description}
+          onChange={e => updateField('description', e.target.value)}
+          rows={8}
+          className={`${inputCls} resize-y`}
+          placeholder="Describe el inmueble en detalle (características, distribución, acabados...)."
+        />
+        <p className="font-montserrat text-xs text-gray-400 mt-1">
+          Esta descripción se muestra en la ficha pública del inmueble.
+        </p>
+      </div>
+
+      {/* Descripción de la zona */}
+      <div>
+        <label className={labelCls}>Descripción de la zona</label>
+        <textarea
+          value={property.descriptionZone}
+          onChange={e => updateField('descriptionZone', e.target.value)}
+          rows={5}
+          className={`${inputCls} resize-y`}
+          placeholder="Describe el entorno: barrio, servicios cercanos, transporte, colegios, comercios..."
+        />
+        <p className="font-montserrat text-xs text-gray-400 mt-1">
+          Se muestra como sección separada en la página de detalle.
+        </p>
+      </div>
+
+      {/* Nota privada */}
+      <div>
+        <label className={`${labelCls} text-amber-700`}>🔒 Nota privada (solo visible en admin)</label>
+        <textarea
+          value={property.privateNotes}
+          onChange={e => updateField('privateNotes', e.target.value)}
+          rows={4}
+          className={`${inputCls} resize-y border-amber-200 bg-amber-50/30`}
+          placeholder="Anotaciones internas: comisión, situación del propietario, detalles de la negociación..."
+        />
+        <p className="font-montserrat text-xs text-amber-600 mt-1">
+          Esta nota NO se muestra en la web pública. Solo visible en el panel de administración.
+        </p>
+      </div>
     </div>
   );
 
@@ -583,7 +636,7 @@ export function PropertyEditor() {
           Habitaciones
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <LabelField label="Nª habitaciones">
+          <LabelField label="Nº habitaciones">
             <input
               type="text"
               inputMode="numeric"
@@ -960,11 +1013,61 @@ export function PropertyEditor() {
         }`}
       >
         {uploading ? (
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
-            <p className="font-montserrat text-sm text-gray-500">
-              Subiendo imágenes…
-            </p>
+          <div className="flex flex-col items-center gap-3 py-2">
+            {/* Per-photo progress */}
+            {uploadProgress ? (
+              <>
+                {/* Thumbnail preview */}
+                {uploadProgress.previewUrl && (
+                  <img
+                    src={uploadProgress.previewUrl}
+                    alt={uploadProgress.fileName}
+                    className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm"
+                  />
+                )}
+                {/* Counter */}
+                <p className="font-montserrat text-sm font-semibold text-brand-navy">
+                  Foto {uploadProgress.currentIndex + 1} de {uploadProgress.total}
+                </p>
+                {/* Phase label */}
+                <p className="font-montserrat text-xs text-gray-500">
+                  {uploadProgress.phase === 'compressing'
+                    ? 'Comprimiendo…'
+                    : uploadProgress.phase === 'uploading'
+                      ? 'Subiendo…'
+                      : uploadProgress.phase === 'done'
+                        ? '✓ Subida'
+                        : uploadProgress.phase === 'error'
+                          ? `✗ Error: ${uploadProgress.errorMessage || 'desconocido'}`
+                          : ''}
+                </p>
+                {/* Progress bar */}
+                <div className="w-full max-w-xs">
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        uploadProgress.phase === 'error' ? 'bg-red-400' : 'bg-brand-gold'
+                      }`}
+                      style={{
+                        width: `${Math.round(((uploadProgress.currentIndex + (uploadProgress.phase === 'done' ? 1 : 0.5)) / uploadProgress.total) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="font-montserrat text-[10px] text-gray-400 text-right mt-1">
+                    {Math.round(((uploadProgress.currentIndex + (uploadProgress.phase === 'done' ? 1 : 0.5)) / uploadProgress.total) * 100)}%
+                  </p>
+                </div>
+                {/* File name */}
+                <p className="font-montserrat text-[10px] text-gray-400 truncate max-w-xs">
+                  {uploadProgress.fileName}
+                </p>
+              </>
+            ) : (
+              <>
+                <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
+                <p className="font-montserrat text-sm text-gray-500">Preparando imágenes…</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
@@ -1010,34 +1113,13 @@ export function PropertyEditor() {
         </div>
       )}
 
-      {/* Image grid */}
+      {/* Image grid — sortable drag to reorder */}
       {property.images.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {property.images.map((url, i) => (
-            <div
-              key={i}
-              className="relative group aspect-[4/3] bg-gray-100 rounded overflow-hidden"
-            >
-              <img
-                src={url}
-                alt={`Imagen ${i + 1}`}
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(url)}
-                className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-              {i === 0 && (
-                <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-brand-gold text-brand-navy text-xs font-montserrat font-semibold rounded">
-                  Principal
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
+        <SortableImageGrid
+          images={property.images}
+          onReorder={(imgs) => updateField('images', imgs)}
+          onDelete={removeImage}
+        />
       )}
 
       {/* URL manual input */}
@@ -1251,6 +1333,91 @@ export function PropertyEditor() {
     </div>
   );
 
+  const renderPublicacion = () => (
+    <div className="space-y-6">
+      <h2 className={sectionTitleCls}>Publicación y Visibilidad</h2>
+
+      {/* Visibility toggle */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <h3 className="font-montserrat text-sm font-semibold text-gray-700 mb-1">
+              Visible en la web pública
+            </h3>
+            <p className="font-montserrat text-xs text-gray-500">
+              Cuando está activado, el inmueble aparece en la web y en la página de detalle.
+              Si lo desactivas, solo será visible desde el panel de administración.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => updateField('isPublic', !property.isPublic)}
+            className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              property.isPublic ? 'bg-green-500' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                property.isPublic ? 'translate-x-7' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+
+        <div className={`mt-4 flex items-center gap-2 font-montserrat text-sm rounded-lg px-4 py-3 ${
+          property.isPublic
+            ? 'bg-green-50 text-green-700 border border-green-200'
+            : 'bg-amber-50 text-amber-700 border border-amber-200'
+        }`}>
+          {property.isPublic ? (
+            <>
+              <Eye className="w-4 h-4" />
+              <span>El inmueble <strong>es visible</strong> en la web pública.</span>
+            </>
+          ) : (
+            <>
+              <EyeOff className="w-4 h-4" />
+              <span>El inmueble <strong>NO es visible</strong> en la web pública. Solo en admin.</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Summary info */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 className="font-montserrat text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
+          Resumen del inmueble
+        </h3>
+        <div className="grid grid-cols-2 gap-4 text-sm font-montserrat">
+          <div className="flex justify-between">
+            <span className="text-gray-500">Título</span>
+            <span className="text-gray-800 font-medium truncate ml-4">{property.title || '—'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Referencia</span>
+            <span className="text-gray-800 font-medium">{property.ref || 'Auto'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Precio</span>
+            <span className="text-gray-800 font-medium">{property.price > 0 ? `${property.price.toLocaleString()} ${property.currency}` : '—'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Estado</span>
+            <span className="text-gray-800 font-medium capitalize">{property.status}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Imágenes</span>
+            <span className="text-gray-800 font-medium">{property.images.length}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Descripción</span>
+            <span className="text-gray-800 font-medium">{property.description ? '✓' : '—'}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   /* -- Section content router -- */
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -1272,6 +1439,8 @@ export function PropertyEditor() {
         return renderPrecio();
       case 'imagenes':
         return renderImagenes();
+      case 'publicacion':
+        return renderPublicacion();
       case 'contactos':
         return renderContactos();
       default:
@@ -1303,12 +1472,7 @@ export function PropertyEditor() {
             </p>
           )}
         </div>
-        {saved && (
-          <span className="font-montserrat text-sm text-green-600 bg-green-50 px-3 py-1.5 rounded flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" />
-            Guardado
-          </span>
-        )}
+
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -1352,11 +1516,12 @@ export function PropertyEditor() {
               </p>
               <div className="flex flex-col gap-1.5">
                 {[
-                  { label: 'T\u00edtulo', ok: !!property.title.trim() },
+                  { label: 'Título', ok: !!property.title.trim() },
                   { label: 'Precio', ok: property.price > 0 },
-                  { label: 'Ubicaci\u00f3n', ok: !!property.town.trim() },
-                  { label: 'Im\u00e1genes', ok: property.images.length > 0 },
-                  { label: 'Descripci\u00f3n', ok: !!property.description.trim() },
+                  { label: 'Ubicación', ok: !!property.town.trim() },
+                  { label: 'Imágenes', ok: property.images.length > 0 },
+                  { label: 'Descripción', ok: !!property.description.trim() },
+                  { label: 'Publicado', ok: property.isPublic },
                 ].map(item => (
                   <div
                     key={item.label}
@@ -1450,54 +1615,6 @@ export function PropertyEditor() {
           </div>
         </div>
       </form>
-
-      {/* Success overlay after creating a new property */}
-      {createdPropertyId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-10 max-w-md w-full mx-4 text-center animate-in fade-in zoom-in duration-300">
-            {/* Animated checkmark */}
-            <div className="mx-auto w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
-            </div>
-
-            <h2 className="font-playfair text-2xl font-semibold text-gray-800 mb-2">
-              ¡Propiedad creada!
-            </h2>
-            <p className="font-montserrat text-sm text-gray-500 mb-8">
-              El inmueble se ha guardado correctamente con referencia{' '}
-              <span className="font-semibold text-brand-navy">{property.ref}</span>.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                type="button"
-                onClick={() => navigate(`/admin/propiedades/${createdPropertyId}`)}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-gold text-brand-navy font-montserrat text-sm font-semibold rounded-lg hover:bg-brand-gold/90 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                Ver propiedad
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setProperty(createEmptyProperty());
-                  setCreatedPropertyId(null);
-                  setSubmitted(false);
-                  setErrors({});
-                  setSaved(false);
-                  setActiveSection('direccion');
-                  setOwnerContactId(null);
-                  setInterests([]);
-                }}
-                className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-200 text-gray-700 font-montserrat text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Crear otra
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

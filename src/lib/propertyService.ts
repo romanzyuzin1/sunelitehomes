@@ -53,6 +53,9 @@ function rowToProperty(row: DbRow): Property {
       emissions: row.energy_emissions,
     },
     description: row.description,
+    descriptionZone: (row as any).description_zone ?? '',
+    privateNotes: (row as any).private_notes ?? '',
+    isPublic: (row as any).is_public ?? true,
     features: row.features,
     status: row.status,
     images: row.images,
@@ -72,6 +75,8 @@ function rowToProperty(row: DbRow): Property {
 
 /** Flag: whether the extended columns (migration_property_extended.sql) exist. */
 let _extendedColumnsAvailable: boolean | null = null;
+/** Flag: whether the visibility/zone columns exist. */
+let _visibilityColumnsAvailable: boolean | null = null;
 
 async function hasExtendedColumns(): Promise<boolean> {
   if (_extendedColumnsAvailable !== null) return _extendedColumnsAvailable;
@@ -87,7 +92,21 @@ async function hasExtendedColumns(): Promise<boolean> {
   return _extendedColumnsAvailable;
 }
 
-function propertyToInsert(p: Property, includeExtended = true): Record<string, unknown> {
+async function hasVisibilityColumns(): Promise<boolean> {
+  if (_visibilityColumnsAvailable !== null) return _visibilityColumnsAvailable;
+  try {
+    const { error } = await supabase
+      .from('properties')
+      .select('description_zone')
+      .limit(1);
+    _visibilityColumnsAvailable = !error;
+  } catch {
+    _visibilityColumnsAvailable = false;
+  }
+  return _visibilityColumnsAvailable;
+}
+
+function propertyToInsert(p: Property, includeExtended = true, includeVisibility = true): Record<string, unknown> {
   const base: Record<string, unknown> = {
     title: p.title,
     ref: p.ref,
@@ -114,6 +133,14 @@ function propertyToInsert(p: Property, includeExtended = true): Record<string, u
     status: p.status,
     images: p.images,
   };
+
+  if (includeVisibility) {
+    Object.assign(base, {
+      description_zone: p.descriptionZone ?? '',
+      private_notes: p.privateNotes ?? '',
+      is_public: p.isPublic ?? true,
+    });
+  }
 
   if (includeExtended) {
     Object.assign(base, {
@@ -210,7 +237,8 @@ export async function createProperty(property: Property): Promise<Property> {
   }
 
   const ext = await hasExtendedColumns();
-  const row = propertyToInsert(property, ext);
+  const vis = await hasVisibilityColumns();
+  const row = propertyToInsert(property, ext, vis);
   const { data, error } = await supabase
     .from('properties')
     .insert(row as any)
@@ -241,7 +269,8 @@ export async function updatePropertyById(
   }
 
   const ext = await hasExtendedColumns();
-  const row = propertyToInsert(property, ext);
+  const vis = await hasVisibilityColumns();
+  const row = propertyToInsert(property, ext, vis);
   const { data, error } = await supabase
     .from('properties')
     .update(row as any)
@@ -287,7 +316,8 @@ export async function bulkInsertProperties(
   }
 
   const ext = await hasExtendedColumns();
-  const rows = properties.map(p => propertyToInsert(p, ext));
+  const vis = await hasVisibilityColumns();
+  const rows = properties.map(p => propertyToInsert(p, ext, vis));
   const { data, error } = await supabase
     .from('properties')
     .upsert(rows as any, { onConflict: 'ref' })
@@ -350,6 +380,9 @@ export function createEmptyProperty(): Property {
     surfaceArea: { built: 0, plot: 0, usable: 0, habitable: 0 },
     energyRating: { consumption: 'none', emissions: 'none' },
     description: '',
+    descriptionZone: '',
+    privateNotes: '',
+    isPublic: true,
     features: [],
     status: 'disponible',
     images: [],

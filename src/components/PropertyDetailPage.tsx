@@ -164,7 +164,7 @@ export function PropertyDetailPage() {
     );
   }
 
-  if (!property) {
+  if (!property || property.isPublic === false) {
     return (
       <>
         <LuxuryNavigation />
@@ -452,6 +452,20 @@ export function PropertyDetailPage() {
                   <p key={i}>{paragraph}</p>
                 ))}
               </div>
+
+              {/* Zone Description */}
+              {property.descriptionZone && property.descriptionZone.trim() && (
+                <div className="mt-12">
+                  <h2 className="font-playfair text-2xl md:text-3xl text-brand-navy mb-6">
+                    {t.zoneDescription}
+                  </h2>
+                  <div className="text-gray-600 font-montserrat leading-relaxed space-y-4">
+                    {property.descriptionZone.split('\n\n').map((paragraph, i) => (
+                      <p key={i}>{paragraph}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Features with icons */}
               {property.features.length > 0 && (

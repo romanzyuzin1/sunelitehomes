@@ -204,16 +204,44 @@ export async function sendEmail(
   }
 
   // ── Fallback: mailto ──
+  // mailto: can't carry attachments — auto-download the PDF first
+  if (msg.attachments && msg.attachments.length > 0) {
+    for (const att of msg.attachments) {
+      downloadBase64File(att.content, att.filename, att.contentType);
+    }
+  }
   openMailto(msg);
   return { ok: true, method: 'mailto' };
 }
 
-/** Open the default mail client */
+/**
+ * Download a base64-encoded file to the user's device.
+ */
+function downloadBase64File(base64: string, filename: string, contentType: string): void {
+  try {
+    const byteChars = atob(base64);
+    const byteArray = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([byteArray], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.warn('[emailService] Could not auto-download attachment:', err);
+  }
+}
+
+/** Open the default mail client with properly encoded subject & body */
 export function openMailto(msg: EmailMessage): void {
-  const params = new URLSearchParams();
-  params.set('subject', msg.subject);
-  params.set('body', msg.text);
-  window.open(`mailto:${msg.to}?${params.toString()}`, '_blank');
+  // Use encodeURIComponent (produces %20 for spaces) — NOT URLSearchParams (uses + for spaces)
+  const subject = encodeURIComponent(msg.subject);
+  const body = encodeURIComponent(msg.text);
+  window.open(`mailto:${encodeURIComponent(msg.to)}?subject=${subject}&body=${body}`, '_blank');
 }
 
 // ─── Email history ───────────────────────────────────────────────────

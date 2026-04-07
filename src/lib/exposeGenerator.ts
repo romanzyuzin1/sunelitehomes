@@ -267,9 +267,8 @@ export async function generateExpose(
   );
   cy += 10;
 
-  // Location
+  // Location (sin dirección exacta por privacidad)
   const locParts = [property.town, property.province].filter(Boolean);
-  if (property.location.address) locParts.unshift(property.location.address);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...BLUE_LIGHT);
