@@ -13,8 +13,9 @@ import {
   fetchInterestsByProperty,
   addPropertyInterest,
   removePropertyInterest,
+  createContact,
 } from '../../lib/contactService';
-import { getContactFullName, type Contact } from '../../data/contacts';
+import { getContactFullName, createEmptyContact, type Contact } from '../../data/contacts';
 import type { PropertyInterest } from '../../data/contacts';
 import type { Property } from '../../data/properties';
 import {
@@ -39,8 +40,10 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  Sparkles,
 } from 'lucide-react';
 import { uploadPropertyImages, deletePropertyImage, type UploadProgress } from '../../lib/imageUpload';
+import { generateDescription, type DescriptionType } from '../../lib/aiService';
 import { SortableImageGrid } from './SortableImageGrid';
 import { EditorMap } from './EditorMap';
 
@@ -48,13 +51,14 @@ import { EditorMap } from './EditorMap';
 const SECTIONS = [
   { id: 'direccion', label: 'Dirección', icon: MapPin },
   { id: 'datos', label: 'Datos básicos', icon: FileText },
-  { id: 'descripcion', label: 'Descripciones', icon: FileText },
+  { id: 'propietario', label: 'Propietario', icon: User },
   { id: 'superficies', label: 'Superficies y Habitaciones', icon: Maximize2 },
   { id: 'caracteristicas', label: 'Características', icon: Settings2 },
   { id: 'energia', label: 'Información energética', icon: Zap },
   { id: 'apartamento', label: 'Apartamento', icon: Building2 },
   { id: 'precio', label: 'Precio', icon: Euro },
   { id: 'imagenes', label: 'Imágenes', icon: ImageIcon },
+  { id: 'descripcion', label: 'Descripciones', icon: FileText },
   { id: 'publicacion', label: 'Publicación', icon: Eye },
   { id: 'contactos', label: 'Contactos', icon: Users },
 ] as const;
@@ -146,6 +150,19 @@ export function PropertyEditor() {
   const [addInterestLevel, setAddInterestLevel] =
     useState<PropertyInterest['interestLevel']>('medium');
 
+  // Inline owner creation
+  const [showNewOwnerForm, setShowNewOwnerForm] = useState(false);
+  const [newOwnerFirstName, setNewOwnerFirstName] = useState('');
+  const [newOwnerLastName, setNewOwnerLastName] = useState('');
+  const [newOwnerPhone, setNewOwnerPhone] = useState('');
+  const [newOwnerEmail, setNewOwnerEmail] = useState('');
+  const [creatingOwner, setCreatingOwner] = useState(false);
+  const [ownerSearch, setOwnerSearch] = useState('');
+
+  // AI description generation
+  const [aiGenerating, setAiGenerating] = useState<DescriptionType | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   // Validation & success state
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -155,6 +172,7 @@ export function PropertyEditor() {
     town: 'direccion',
     title: 'datos',
     price: 'precio',
+    owner: 'propietario',
   };
 
   const validateForm = (): Record<string, string> => {
@@ -162,6 +180,7 @@ export function PropertyEditor() {
     if (!property.title.trim()) errs.title = 'El título es obligatorio';
     if (property.price <= 0) errs.price = 'El precio debe ser mayor que 0';
     if (!property.town.trim()) errs.town = 'La población es obligatoria';
+    if (!ownerContactId) errs.owner = 'Debes asignar un propietario';
     return errs;
   };
 
@@ -228,9 +247,13 @@ export function PropertyEditor() {
       }
       if (isNew) {
         const created = await createProperty(toSave);
+        if (ownerContactId) {
+          await setPropertyOwner(created.id, ownerContactId);
+        }
         navigate(`/admin/propiedades/${created.id}/detalle`);
       } else {
         await updatePropertyById(toSave.id, toSave);
+        await setPropertyOwner(toSave.id, ownerContactId);
         navigate(`/admin/propiedades/${toSave.id}/detalle`);
       }
     } catch (err) {
@@ -510,13 +533,293 @@ export function PropertyEditor() {
     </div>
   );
 
+  const renderPropietario = () => {
+    const ownerContacts = allContacts.filter(c => c.isOwner);
+    const searchLower = ownerSearch.toLowerCase();
+    const filteredOwners = ownerSearch
+      ? ownerContacts.filter(c =>
+          `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchLower) ||
+          c.phone.includes(ownerSearch) ||
+          c.email.toLowerCase().includes(searchLower)
+        )
+      : ownerContacts;
+    const selectedOwner = ownerContactId
+      ? allContacts.find(c => c.id === ownerContactId)
+      : null;
+
+    const handleCreateOwner = async () => {
+      if (!newOwnerFirstName.trim() || !newOwnerPhone.trim()) return;
+      setCreatingOwner(true);
+      try {
+        const contact = createEmptyContact();
+        contact.firstName = newOwnerFirstName.trim();
+        contact.lastName = newOwnerLastName.trim();
+        contact.phone = newOwnerPhone.trim();
+        contact.email = newOwnerEmail.trim();
+        contact.isOwner = true;
+        const created = await createContact(contact);
+        setAllContacts(prev => [...prev, created]);
+        setOwnerContactId(created.id);
+        setShowNewOwnerForm(false);
+        setNewOwnerFirstName('');
+        setNewOwnerLastName('');
+        setNewOwnerPhone('');
+        setNewOwnerEmail('');
+        setOwnerSearch('');
+        if (submitted) setErrors(prev => { const n = { ...prev }; delete n.owner; return n; });
+      } catch (err) {
+        console.error('Error creating owner:', err);
+      } finally {
+        setCreatingOwner(false);
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <h2 className={sectionTitleCls}>Propietario *</h2>
+
+        {/* Selected owner card */}
+        {selectedOwner && (
+          <div className="flex items-center gap-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="w-10 h-10 rounded-full bg-brand-gold/10 text-brand-gold flex items-center justify-center font-montserrat font-bold text-sm">
+              {(selectedOwner.firstName || '?').charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-montserrat text-sm font-semibold text-gray-800">
+                {getContactFullName(selectedOwner)}
+              </p>
+              <p className="font-montserrat text-xs text-gray-500">
+                {selectedOwner.phone}{selectedOwner.email && ` · ${selectedOwner.email}`}
+              </p>
+            </div>
+            {!isNew && selectedOwner.id > 0 && (
+              <Link
+                to={`/admin/contactos/${selectedOwner.id}/detalle`}
+                className="px-3 py-1.5 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/20 rounded font-montserrat text-xs font-semibold transition-colors"
+              >
+                Ver ficha
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => { setOwnerContactId(null); setOwnerSearch(''); }}
+              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+              title="Quitar propietario"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Validation error */}
+        {submitted && errors.owner && !ownerContactId && (
+          <p className="flex items-center gap-1 font-montserrat text-sm text-red-500">
+            <AlertCircle className="w-4 h-4" />
+            {errors.owner}
+          </p>
+        )}
+
+        {/* Owner selection */}
+        {!selectedOwner && !showNewOwnerForm && (
+          <div className="space-y-4">
+            <div>
+              <label className={labelCls}>Buscar propietario existente</label>
+              <input
+                type="text"
+                value={ownerSearch}
+                onChange={e => setOwnerSearch(e.target.value)}
+                className={submitted && errors.owner ? inputErrorCls : inputCls}
+                placeholder="Buscar por nombre, teléfono o email..."
+              />
+            </div>
+
+            {/* Owner list */}
+            {filteredOwners.length > 0 ? (
+              <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                {filteredOwners.map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setOwnerContactId(c.id);
+                      setOwnerSearch('');
+                      if (submitted) setErrors(prev => { const n = { ...prev }; delete n.owner; return n; });
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-gold/5 transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-montserrat font-bold text-xs">
+                      {(c.firstName || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-montserrat text-sm font-medium text-gray-800 truncate">
+                        {getContactFullName(c)}
+                      </p>
+                      <p className="font-montserrat text-xs text-gray-400 truncate">
+                        {c.phone}{c.email && ` · ${c.email}`}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : ownerSearch ? (
+              <p className="font-montserrat text-sm text-gray-400 py-4 text-center">
+                No se encontraron propietarios con "{ownerSearch}"
+              </p>
+            ) : (
+              <p className="font-montserrat text-sm text-gray-400 py-4 text-center">
+                No hay contactos marcados como propietario.
+              </p>
+            )}
+
+            {/* Separator */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="font-montserrat text-xs text-gray-400">o</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
+            {/* Create new owner button */}
+            <button
+              type="button"
+              onClick={() => setShowNewOwnerForm(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 hover:border-brand-gold hover:bg-brand-gold/5 rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4 text-brand-gold" />
+              <span className="font-montserrat text-sm font-medium text-gray-600">
+                Crear nuevo propietario
+              </span>
+            </button>
+          </div>
+        )}
+
+        {/* Inline create owner form */}
+        {showNewOwnerForm && !selectedOwner && (
+          <div className="border border-brand-gold/30 bg-brand-gold/5 rounded-lg p-5 space-y-4">
+            <h3 className="font-montserrat text-sm font-semibold text-brand-navy flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Nuevo propietario
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <LabelField label="Nombre *">
+                <input
+                  type="text"
+                  value={newOwnerFirstName}
+                  onChange={e => setNewOwnerFirstName(e.target.value)}
+                  className={inputCls}
+                  placeholder="Nombre"
+                />
+              </LabelField>
+              <LabelField label="Apellidos">
+                <input
+                  type="text"
+                  value={newOwnerLastName}
+                  onChange={e => setNewOwnerLastName(e.target.value)}
+                  className={inputCls}
+                  placeholder="Apellidos"
+                />
+              </LabelField>
+              <LabelField label="Teléfono *">
+                <input
+                  type="tel"
+                  value={newOwnerPhone}
+                  onChange={e => setNewOwnerPhone(e.target.value)}
+                  className={inputCls}
+                  placeholder="+34 612 345 678"
+                />
+              </LabelField>
+              <LabelField label="Email">
+                <input
+                  type="email"
+                  value={newOwnerEmail}
+                  onChange={e => setNewOwnerEmail(e.target.value)}
+                  className={inputCls}
+                  placeholder="email@ejemplo.com"
+                />
+              </LabelField>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNewOwnerForm(false);
+                  setNewOwnerFirstName('');
+                  setNewOwnerLastName('');
+                  setNewOwnerPhone('');
+                  setNewOwnerEmail('');
+                }}
+                className="px-4 py-2 font-montserrat text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={!newOwnerFirstName.trim() || !newOwnerPhone.trim() || creatingOwner}
+                onClick={handleCreateOwner}
+                className="flex items-center gap-2 px-5 py-2 bg-brand-gold text-brand-navy font-montserrat text-sm font-semibold rounded hover:bg-brand-gold/90 transition-colors disabled:opacity-50"
+              >
+                {creatingOwner && <Loader2 className="w-4 h-4 animate-spin" />}
+                Crear y seleccionar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const handleGenerateAI = async (type: DescriptionType) => {
+    setAiGenerating(type);
+    setAiError(null);
+    try {
+      const text = await generateDescription(property, type);
+      if (type === 'property') {
+        updateField('description', text);
+      } else {
+        updateField('descriptionZone', text);
+      }
+    } catch (err: any) {
+      setAiError(err?.message || 'Error al generar la descripción.');
+    } finally {
+      setAiGenerating(null);
+    }
+  };
+
   const renderDescripcion = () => (
     <div className="space-y-6">
       <h2 className={sectionTitleCls}>Descripciones</h2>
 
+      {/* AI error banner */}
+      {aiError && (
+        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-montserrat text-sm text-red-700 font-medium">Error de IA</p>
+            <p className="font-montserrat text-xs text-red-600 mt-1">{aiError}</p>
+          </div>
+          <button type="button" onClick={() => setAiError(null)} className="text-red-400 hover:text-red-600 shrink-0">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Descripción del inmueble */}
       <div>
-        <label className={labelCls}>Descripción del inmueble</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className={labelCls + ' mb-0'}>Descripción del inmueble</label>
+          <button
+            type="button"
+            disabled={aiGenerating !== null}
+            onClick={() => handleGenerateAI('property')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-montserrat text-xs font-semibold rounded-full hover:from-violet-600 hover:to-purple-700 transition-all disabled:opacity-50 shadow-sm"
+          >
+            {aiGenerating === 'property' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            {aiGenerating === 'property' ? 'Generando…' : 'Generar con IA'}
+          </button>
+        </div>
         <textarea
           value={property.description}
           onChange={e => updateField('description', e.target.value)}
@@ -531,7 +834,22 @@ export function PropertyEditor() {
 
       {/* Descripción de la zona */}
       <div>
-        <label className={labelCls}>Descripción de la zona</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className={labelCls + ' mb-0'}>Descripción de la zona</label>
+          <button
+            type="button"
+            disabled={aiGenerating !== null}
+            onClick={() => handleGenerateAI('zone')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-montserrat text-xs font-semibold rounded-full hover:from-violet-600 hover:to-purple-700 transition-all disabled:opacity-50 shadow-sm"
+          >
+            {aiGenerating === 'zone' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            {aiGenerating === 'zone' ? 'Generando…' : 'Generar con IA'}
+          </button>
+        </div>
         <textarea
           value={property.descriptionZone}
           onChange={e => updateField('descriptionZone', e.target.value)}
@@ -1155,53 +1473,6 @@ export function PropertyEditor() {
 
   const renderContactos = () => (
     <div className="space-y-6">
-      {/* Owner */}
-      <div>
-        <h2 className={`flex items-center gap-2 ${sectionTitleCls}`}>
-          <User className="w-4 h-4" /> Propietario
-        </h2>
-        <div className="flex gap-2 items-end">
-          <div className="flex-1">
-            <select
-              value={ownerContactId ?? ''}
-              onChange={async e => {
-                const cid = e.target.value ? Number(e.target.value) : null;
-                setOwnerContactId(cid);
-                try {
-                  await setPropertyOwner(property.id, cid);
-                } catch (err) {
-                  console.error('Error setting owner:', err);
-                }
-              }}
-              className={inputCls}
-            >
-              <option value="">— Sin propietario —</option>
-              {allContacts
-                .filter(c => c.isOwner)
-                .map(c => (
-                  <option key={c.id} value={c.id}>
-                    {getContactFullName(c)} {c.phone ? `(${c.phone})` : ''}
-                  </option>
-                ))}
-            </select>
-          </div>
-          {ownerContactId && (
-            <Link
-              to={`/admin/contactos/${ownerContactId}/detalle`}
-              className="px-3 py-2 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/20 rounded font-montserrat text-xs transition-colors whitespace-nowrap font-semibold"
-            >
-              Ver ficha
-            </Link>
-          )}
-          <Link
-            to="/admin/contactos/nuevo"
-            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded font-montserrat text-xs transition-colors whitespace-nowrap"
-          >
-            + Nuevo contacto
-          </Link>
-        </div>
-      </div>
-
       {/* Interests */}
       <div>
         <h2 className={`flex items-center gap-2 ${sectionTitleCls}`}>
@@ -1425,6 +1696,8 @@ export function PropertyEditor() {
         return renderDireccion();
       case 'datos':
         return renderDatosBasicos();
+      case 'propietario':
+        return renderPropietario();
       case 'descripcion':
         return renderDescripcion();
       case 'superficies':
@@ -1519,6 +1792,7 @@ export function PropertyEditor() {
                   { label: 'Título', ok: !!property.title.trim() },
                   { label: 'Precio', ok: property.price > 0 },
                   { label: 'Ubicación', ok: !!property.town.trim() },
+                  { label: 'Propietario', ok: !!ownerContactId },
                   { label: 'Imágenes', ok: property.images.length > 0 },
                   { label: 'Descripción', ok: !!property.description.trim() },
                   { label: 'Publicado', ok: property.isPublic },

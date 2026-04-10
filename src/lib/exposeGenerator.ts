@@ -1,24 +1,25 @@
 /**
- * Exposé PDF Generator — Elegant landscape real-estate brochure
- * Uses jsPDF to produce a branded property exposé in blue & white.
+ * Exposé PDF Generator — Elegant portrait real-estate brochure
+ * Uses jsPDF to produce a branded property exposé on white background.
  */
 import jsPDF from 'jspdf';
 import type { Property } from '../data/properties';
 import { formatPrice } from '../data/properties';
 import logoUrl from '../assets/logo.png';
 
-/* ── Brand palette (blue & white only) ─────────────────── */
+/* ── Brand palette (white background, navy & gold accents) ── */
 const NAVY: [number, number, number] = [15, 23, 42];       // #0F172A
 const BLUE_DARK: [number, number, number] = [30, 41, 59];   // #1E293B
 const BLUE_MID: [number, number, number] = [71, 85, 105];   // #475569
 const BLUE_LIGHT: [number, number, number] = [148, 163, 184]; // #94A3B8
 const BLUE_PALE: [number, number, number] = [226, 232, 240]; // #E2E8F0
 const BLUE_ICE: [number, number, number] = [241, 245, 249];  // #F1F5F9
-const WHITE: [number, number, number] = [255, 255, 255];
+const GOLD: [number, number, number] = [184, 152, 42];      // #B8982A
 
-/* ── Landscape A4 constants ────────────────────────────── */
-const PW = 297; // landscape width
-const PH = 210; // landscape height
+/* ── Portrait A4 constants ─────────────────────────────── */
+const PW = 210; // portrait width
+const PH = 297; // portrait height
+const SITE_URL = 'https://www.sunelitehomes.com';
 
 /* ── Helpers ───────────────────────────────────────────── */
 
@@ -74,20 +75,6 @@ function getImageDimensions(
     img.onerror = () => resolve({ w: 1, h: 1 });
     img.src = dataUrl;
   });
-}
-
-/** Draw a thin accent line in navy */
-function accentLine(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  width: number,
-  thickness = 0.5,
-  color: [number, number, number] = WHITE,
-) {
-  doc.setDrawColor(...color);
-  doc.setLineWidth(thickness);
-  doc.line(x, y, x + width, y);
 }
 
 /** Wrap text and return lines */
@@ -158,11 +145,14 @@ export async function generateExpose(
 
   report('Preparando documento…', 0);
 
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = PW;
   const H = PH;
-  const MARGIN = 14;
+  const MARGIN = 16;
   const CONTENT_W = W - MARGIN * 2;
+
+  // Public URL for the property
+  const publicUrl = `${SITE_URL}/inmueble/${property.id}`;
 
   /* ─────────────── PRE-LOAD IMAGES ─────────────── */
   report('Descargando imágenes…', 5);
@@ -192,97 +182,103 @@ export async function generateExpose(
   const heroImg = imageDataUrls[0];
   const heroDims = heroImg ? await getImageDimensions(heroImg) : null;
 
-  // ── Split layout: left navy panel (38%) + right image (62%) ──
-  const LEFT_W = W * 0.38;
-  const RIGHT_W = W - LEFT_W;
+  // ── Slim gold top bar ──
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 0, W, 3, 'F');
 
-  // Navy left panel
-  doc.setFillColor(...NAVY);
-  doc.rect(0, 0, LEFT_W, H, 'F');
-
-  // Hero image on the right
-  if (heroImg && heroDims) {
-    drawCoverImage(doc, heroImg, heroDims, LEFT_W, 0, RIGHT_W, H);
-    // Subtle gradient overlay from left edge of image for blending
-    for (let i = 0; i < 30; i++) {
-      const opacity = ((30 - i) / 30) * 0.7;
-      doc.setFillColor(...NAVY);
-      doc.setGState(doc.GState({ opacity }));
-      doc.rect(LEFT_W + i, 0, 1, H, 'F');
-    }
-    doc.setGState(doc.GState({ opacity: 1 }));
-  } else {
-    // No image — full navy background
-    doc.setFillColor(...BLUE_DARK);
-    doc.rect(LEFT_W, 0, RIGHT_W, H, 'F');
-  }
-
-  // ── Left panel content ──
-  const PX = 16; // panel inner padding
-  let cy = 24;
-
-  // Logo
+  // ── Logo area ──
+  let cy = 12;
   if (logoData && logoDims) {
     const logoH = 14;
     const logoW = logoH * (logoDims.w / logoDims.h);
-    doc.addImage(logoData, 'PNG', PX, cy, logoW, logoH);
-    cy += logoH + 4;
+    doc.addImage(logoData, 'PNG', MARGIN, cy, logoW, logoH);
+    cy += logoH + 2;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...BLUE_LIGHT);
-    doc.text('SUN ELITE HOMES', PX, cy);
+    doc.setFontSize(7);
+    doc.setTextColor(...GOLD);
+    doc.text('SUN ELITE HOMES', MARGIN, cy);
   } else {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.setTextColor(...WHITE);
-    doc.text('SUN ELITE HOMES', PX, cy);
+    doc.setTextColor(...NAVY);
+    doc.text('SUN ELITE HOMES', MARGIN, cy);
   }
 
-  // Thin white accent line
-  cy += 10;
-  accentLine(doc, PX, cy, LEFT_W - PX * 2, 0.3, BLUE_LIGHT);
-  cy += 14;
+  // ── Hero image (full width, large) ──
+  const HERO_Y = 38;
+  const HERO_H = 110;
+  if (heroImg && heroDims) {
+    drawCoverImage(doc, heroImg, heroDims, MARGIN, HERO_Y, CONTENT_W, HERO_H, 4);
+    // Subtle gradient overlay at bottom for text readability
+    for (let i = 0; i < 25; i++) {
+      const opacity = (i / 25) * 0.5;
+      doc.setFillColor(0, 0, 0);
+      doc.setGState(doc.GState({ opacity }));
+      doc.rect(MARGIN, HERO_Y + HERO_H - 25 + i, CONTENT_W, 1, 'F');
+    }
+    doc.setGState(doc.GState({ opacity: 1 }));
+  } else {
+    doc.setFillColor(...BLUE_ICE);
+    doc.roundedRect(MARGIN, HERO_Y, CONTENT_W, HERO_H, 4, 4, 'F');
+  }
 
-  // Property title — large, elegant
+  // ── Ref badge on top-right of image ──
+  if (property.ref) {
+    const refText = `Ref: ${property.ref}`;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    const refW = doc.getTextWidth(refText) + 8;
+    const refX = MARGIN + CONTENT_W - refW - 4;
+    const refY = HERO_Y + 4;
+    doc.setFillColor(255, 255, 255);
+    doc.setGState(doc.GState({ opacity: 0.85 }));
+    doc.roundedRect(refX, refY, refW, 6, 2, 2, 'F');
+    doc.setGState(doc.GState({ opacity: 1 }));
+    doc.setTextColor(...NAVY);
+    doc.text(refText, refX + 4, refY + 4.2);
+  }
+
+  // ── Content below hero ──
+  cy = HERO_Y + HERO_H + 12;
+
+  // Title
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.setTextColor(...WHITE);
-  const coverMaxW = LEFT_W - PX * 2;
-  const titleLines = splitText(doc, property.title, coverMaxW);
+  doc.setFontSize(22);
+  doc.setTextColor(...NAVY);
+  const titleLines = splitText(doc, property.title, CONTENT_W);
   titleLines.forEach((line: string) => {
-    doc.text(line, PX, cy);
-    cy += 9;
+    doc.text(line, MARGIN, cy);
+    cy += 10;
   });
 
-  cy += 6;
+  cy += 2;
 
-  // Price — prominent
+  // Gold accent line under title
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.8);
+  doc.line(MARGIN, cy, MARGIN + 40, cy);
+  cy += 10;
+
+  // Price
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.setTextColor(...WHITE);
+  doc.setTextColor(...GOLD);
   doc.text(
     formatPrice(property.price, property.currency, property.priceFreq),
-    PX,
+    MARGIN,
     cy,
   );
-  cy += 10;
+  cy += 9;
 
-  // Location (sin dirección exacta por privacidad)
+  // Location
   const locParts = [property.town, property.province].filter(Boolean);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...BLUE_LIGHT);
-  const locLines = splitText(doc, locParts.join(' · '), coverMaxW);
-  locLines.forEach((line: string) => {
-    doc.text(line, PX, cy);
-    cy += 5;
-  });
+  doc.setFontSize(10);
+  doc.setTextColor(...BLUE_MID);
+  doc.text(locParts.join(' · '), MARGIN, cy);
+  cy += 12;
 
-  cy += 8;
-  accentLine(doc, PX, cy, LEFT_W - PX * 2, 0.3, BLUE_LIGHT);
-  cy += 10;
-
-  // Key stats in a minimal grid (icons-like: beds, baths, area)
+  // Key stats in a row of boxes
   const miniStats: { label: string; value: string }[] = [];
   if (property.beds > 0) miniStats.push({ label: 'Dormitorios', value: String(property.beds) });
   if (property.baths > 0) miniStats.push({ label: 'Baños', value: String(property.baths) });
@@ -291,70 +287,76 @@ export async function generateExpose(
   if (property.pool) miniStats.push({ label: 'Piscina', value: 'Sí' });
   if (property.type) miniStats.push({ label: 'Tipo', value: property.type });
 
-  const STAT_COL_W = (LEFT_W - PX * 2) / 2;
-  miniStats.slice(0, 6).forEach((stat, i) => {
-    const col = i % 2;
-    const sx = PX + col * STAT_COL_W;
+  const statCount = Math.min(miniStats.length, 4);
+  if (statCount > 0) {
+    const STAT_W = (CONTENT_W - (statCount - 1) * 4) / statCount;
+    const STAT_H = 20;
+    miniStats.slice(0, 4).forEach((stat, i) => {
+      const sx = MARGIN + i * (STAT_W + 4);
+      // Stat box with light background
+      doc.setFillColor(...BLUE_ICE);
+      doc.roundedRect(sx, cy, STAT_W, STAT_H, 2, 2, 'F');
 
-    if (col === 0 && i > 0) cy += 14;
+      // Value
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(...NAVY);
+      doc.text(stat.value, sx + STAT_W / 2, cy + 9, { align: 'center' });
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor(...WHITE);
-    doc.text(stat.value, sx, cy);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...BLUE_LIGHT);
-    doc.text(stat.label.toUpperCase(), sx, cy + 5);
-  });
-
-  cy += 14;
-
-  // Ref at bottom of left panel
-  if (property.ref) {
-    const refY = H - 14;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...BLUE_MID);
-    doc.text(`Ref: ${property.ref}`, PX, refY);
+      // Label
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...BLUE_MID);
+      doc.text(stat.label.toUpperCase(), sx + STAT_W / 2, cy + 15, { align: 'center' });
+    });
+    cy += STAT_H + 6;
   }
 
-  // Bottom edge: thin white line
-  accentLine(doc, PX, H - 10, LEFT_W - PX * 2, 0.2, BLUE_MID);
+  // ── "Ver propiedad online" link ──
+  if (cy < H - 30) {
+    cy = Math.max(cy, H - 40);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...BLUE_MID);
+    doc.text('Ver esta propiedad online:', MARGIN, cy);
+    doc.setTextColor(...GOLD);
+    doc.setFont('helvetica', 'bold');
+    const linkY = cy;
+    const labelW = doc.getTextWidth('Ver esta propiedad online: ');
+    doc.textWithLink(publicUrl, MARGIN + labelW, linkY, { url: publicUrl });
+    // Underline the link
+    const linkW = doc.getTextWidth(publicUrl);
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN + labelW, linkY + 0.8, MARGIN + labelW + linkW, linkY + 0.8);
+  }
+
+  // Cover footer
+  addPageFooter(doc, W, H, MARGIN, property);
 
   /* ═══════════════ PAGE 2 — DETAILS ═══════════════ */
   report('Generando ficha técnica…', 60);
   doc.addPage();
 
-  // White background is default
   let cursorY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
 
-  // Two-column layout
-  const LEFT_COL_W = CONTENT_W * 0.48;
-  const RIGHT_COL_W = CONTENT_W * 0.48;
-  const COL_GAP = CONTENT_W * 0.04;
-  const LEFT_X = MARGIN;
-  const RIGHT_X = MARGIN + LEFT_COL_W + COL_GAP;
-
-  // ── Left column: title + specs ──
-  let leftY = cursorY;
-
-  // Property title
+  // ── Property title (smaller) ──
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
+  doc.setFontSize(14);
   doc.setTextColor(...NAVY);
-  const pgTitleLines = splitText(doc, property.title, LEFT_COL_W);
+  const pgTitleLines = splitText(doc, property.title, CONTENT_W);
   pgTitleLines.forEach((line: string) => {
-    doc.text(line, LEFT_X, leftY);
-    leftY += 7;
+    doc.text(line, MARGIN, cursorY);
+    cursorY += 7;
   });
 
-  leftY += 2;
-  accentLine(doc, LEFT_X, leftY, 30, 0.6, NAVY);
-  leftY += 8;
+  cursorY += 2;
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(MARGIN, cursorY, MARGIN + 30, cursorY);
+  cursorY += 8;
 
-  // Key specs table
+  // ── Specs table ──
   const specs: [string, string][] = [];
   if (property.type) specs.push(['Tipo', property.type]);
   if (property.beds > 0) specs.push(['Dormitorios', String(property.beds)]);
@@ -391,44 +393,58 @@ export async function generateExpose(
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...NAVY);
-    doc.text('DATOS DEL INMUEBLE', LEFT_X, leftY);
-    leftY += 6;
+    doc.text('DATOS DEL INMUEBLE', MARGIN, cursorY);
+    cursorY += 6;
 
+    // Two-column specs table
+    const TABLE_W = CONTENT_W;
+    const COL_W = TABLE_W / 2;
     const ROW_H = 7;
-    const VALUE_OFFSET = 40;
+    const VALUE_OFFSET = 38;
+
     specs.forEach(([label, value], i) => {
+      const col = i < Math.ceil(specs.length / 2) ? 0 : 1;
+      const rowInCol = col === 0 ? i : i - Math.ceil(specs.length / 2);
+      const sx = MARGIN + col * COL_W;
+      const sy = cursorY + rowInCol * ROW_H;
+
       // Alternating row background
-      if (i % 2 === 0) {
+      if (rowInCol % 2 === 0) {
         doc.setFillColor(...BLUE_ICE);
-        doc.rect(LEFT_X, leftY - 4, LEFT_COL_W, ROW_H, 'F');
+        doc.rect(sx, sy - 4, COL_W - 2, ROW_H, 'F');
       }
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
       doc.setTextColor(...BLUE_MID);
-      doc.text(label, LEFT_X + 2, leftY);
+      doc.text(label, sx + 2, sy);
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(...NAVY);
-      doc.text(value, LEFT_X + VALUE_OFFSET, leftY);
-
-      leftY += ROW_H;
+      doc.text(value, sx + VALUE_OFFSET, sy);
     });
 
-    leftY += 4;
+    const specRows = Math.ceil(specs.length / 2);
+    cursorY += specRows * ROW_H + 6;
   }
 
-  // Energy rating (compact)
+  // ── Energy rating ──
   if (
     property.energyRating.consumption &&
     property.energyRating.consumption !== 'none'
   ) {
+    if (cursorY > H - 60) {
+      addPageFooter(doc, W, H, MARGIN, property);
+      doc.addPage();
+      cursorY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
+    }
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...NAVY);
-    doc.text('CALIFICACIÓN ENERGÉTICA', LEFT_X, leftY);
-    leftY += 6;
+    doc.text('CALIFICACIÓN ENERGÉTICA', MARGIN, cursorY);
+    cursorY += 6;
 
     const energyLetters = [
       { letter: 'A', color: [0, 150, 64] as [number, number, number] },
@@ -447,103 +463,129 @@ export async function generateExpose(
         property.energyRating.consumption.toLowerCase() ===
         en.letter.toLowerCase();
       doc.setFillColor(...en.color);
-      doc.roundedRect(LEFT_X, leftY, barW, barH, 1, 1, 'F');
+      doc.roundedRect(MARGIN, cursorY, barW, barH, 1, 1, 'F');
       doc.setFont('helvetica', isActive ? 'bold' : 'normal');
       doc.setFontSize(isActive ? 7 : 6);
       doc.setTextColor(255, 255, 255);
-      doc.text(en.letter, LEFT_X + barW - 4, leftY + barH - 1.2);
+      doc.text(en.letter, MARGIN + barW - 4, cursorY + barH - 1.2);
       if (isActive) {
         doc.setFillColor(...NAVY);
         doc.triangle(
-          LEFT_X + barW + 2, leftY + barH / 2,
-          LEFT_X + barW + 4.5, leftY,
-          LEFT_X + barW + 4.5, leftY + barH,
+          MARGIN + barW + 2, cursorY + barH / 2,
+          MARGIN + barW + 4.5, cursorY,
+          MARGIN + barW + 4.5, cursorY + barH,
           'F',
         );
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7);
         doc.setTextColor(...NAVY);
-        doc.text(`Consumo: ${en.letter}`, LEFT_X + barW + 6, leftY + barH - 1.2);
+        doc.text(`Consumo: ${en.letter}`, MARGIN + barW + 6, cursorY + barH - 1.2);
       }
-      leftY += barH + 1;
+      cursorY += barH + 1;
     });
+    cursorY += 4;
   }
 
-  // ── Right column: description + features ──
-  let rightY = cursorY;
-
-  // Description
+  // ── Description ──
   if (property.description) {
+    if (cursorY > H - 40) {
+      addPageFooter(doc, W, H, MARGIN, property);
+      doc.addPage();
+      cursorY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
+    }
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...NAVY);
-    doc.text('DESCRIPCIÓN', RIGHT_X, rightY);
-    rightY += 6;
+    doc.text('DESCRIPCIÓN', MARGIN, cursorY);
+    cursorY += 6;
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...BLUE_DARK);
-    const descLines = splitText(doc, property.description, RIGHT_COL_W);
-    // Limit to available space, overflow to next page later
-    const maxDescLines = Math.floor((H - rightY - 50) / 4.5);
-    const visibleLines = descLines.slice(0, maxDescLines);
-    visibleLines.forEach((line: string) => {
-      doc.text(line, RIGHT_X, rightY);
-      rightY += 4.5;
+    const descLines = splitText(doc, property.description, CONTENT_W);
+    descLines.forEach((line: string) => {
+      if (cursorY > H - 22) {
+        addPageFooter(doc, W, H, MARGIN, property);
+        doc.addPage();
+        cursorY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...BLUE_DARK);
+      }
+      doc.text(line, MARGIN, cursorY);
+      cursorY += 4.5;
     });
-
-    // If description overflowed, we continue on an additional page
-    if (descLines.length > maxDescLines) {
-      const remainingLines = descLines.slice(maxDescLines);
-      doc.addPage();
-      let contY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(...NAVY);
-      doc.text('DESCRIPCIÓN (cont.)', MARGIN, contY);
-      contY += 6;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(...BLUE_DARK);
-      remainingLines.forEach((line: string) => {
-        if (contY > H - 20) {
-          addPageFooter(doc, W, H, MARGIN, property);
-          doc.addPage();
-          contY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(8);
-          doc.setTextColor(...BLUE_DARK);
-        }
-        doc.text(line, MARGIN, contY);
-        contY += 4.5;
-      });
-      addPageFooter(doc, W, H, MARGIN, property);
-    }
-
-    rightY += 6;
+    cursorY += 6;
   }
 
-  // Features
-  if (property.features.length > 0 && rightY < H - 30) {
+  // ── Zone description ──
+  if (property.descriptionZone) {
+    if (cursorY > H - 40) {
+      addPageFooter(doc, W, H, MARGIN, property);
+      doc.addPage();
+      cursorY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
+    }
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...NAVY);
-    doc.text('CARACTERÍSTICAS', RIGHT_X, rightY);
-    rightY += 6;
+    doc.text('LA ZONA', MARGIN, cursorY);
+    cursorY += 6;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...BLUE_DARK);
+    const zoneLines = splitText(doc, property.descriptionZone, CONTENT_W);
+    zoneLines.forEach((line: string) => {
+      if (cursorY > H - 22) {
+        addPageFooter(doc, W, H, MARGIN, property);
+        doc.addPage();
+        cursorY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...BLUE_DARK);
+      }
+      doc.text(line, MARGIN, cursorY);
+      cursorY += 4.5;
+    });
+    cursorY += 6;
+  }
+
+  // ── Features ──
+  if (property.features.length > 0) {
+    if (cursorY > H - 30) {
+      addPageFooter(doc, W, H, MARGIN, property);
+      doc.addPage();
+      cursorY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...NAVY);
+    doc.text('CARACTERÍSTICAS', MARGIN, cursorY);
+    cursorY += 6;
 
     const featureCols = 2;
-    const featureColW = RIGHT_COL_W / featureCols;
+    const featureColW = CONTENT_W / featureCols;
     const FEATURE_ROW_H = 5.5;
     property.features.forEach((f, i) => {
       const col = i % featureCols;
-      const fx = RIGHT_X + col * featureColW;
-      if (col === 0 && i > 0) rightY += FEATURE_ROW_H;
+      const fx = MARGIN + col * featureColW;
+      if (col === 0 && i > 0) cursorY += FEATURE_ROW_H;
 
-      if (rightY > H - 20) return; // stop if no space
+      if (cursorY > H - 22) {
+        addPageFooter(doc, W, H, MARGIN, property);
+        doc.addPage();
+        cursorY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...BLUE_DARK);
+      }
 
-      // Small navy bullet
-      doc.setFillColor(...NAVY);
-      doc.circle(fx + 1.5, rightY - 1, 0.8, 'F');
+      // Gold bullet
+      doc.setFillColor(...GOLD);
+      doc.circle(fx + 1.5, cursorY - 1, 0.8, 'F');
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
@@ -553,8 +595,9 @@ export async function generateExpose(
       const truncated = doc.getTextWidth(featureText) > maxFW
         ? featureText.slice(0, Math.floor(featureText.length * (maxFW / doc.getTextWidth(featureText)))) + '…'
         : featureText;
-      doc.text(truncated, fx + 4, rightY);
+      doc.text(truncated, fx + 4, cursorY);
     });
+    cursorY += FEATURE_ROW_H + 4;
   }
 
   // Footer on details page
@@ -565,12 +608,11 @@ export async function generateExpose(
 
   const galleryImages = imageDataUrls.slice(1).filter(Boolean) as string[];
   if (galleryImages.length > 0) {
-    // Layout: 1 large + 2 small on first gallery page, then 2x3 grid
     let giIdx = 0;
 
-    // ── First gallery page: 1 hero + 2 side images ──
+    // ── First gallery page: 1 large + 2 side images ──
     doc.addPage();
-    const galHeaderY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
+    let galHeaderY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
@@ -578,30 +620,29 @@ export async function generateExpose(
     doc.text('GALERÍA DE IMÁGENES', MARGIN, galHeaderY);
 
     const GAL_START_Y = galHeaderY + 6;
-    const GAL_H = H - GAL_START_Y - 20; // available height for images
+    const GAL_H = H - GAL_START_Y - 22;
     const GAP = 4;
 
     if (galleryImages.length >= 3) {
-      // Large image on left (60%), two stacked on right (40%)
-      const LARGE_W = CONTENT_W * 0.6 - GAP / 2;
-      const SMALL_W = CONTENT_W * 0.4 - GAP / 2;
-      const SMALL_H = (GAL_H - GAP) / 2;
+      // Large image on top (60% height), two side by side below
+      const LARGE_H = GAL_H * 0.58;
+      const SMALL_H = GAL_H - LARGE_H - GAP;
+      const SMALL_W = (CONTENT_W - GAP) / 2;
 
       // Large image
-      const largeImg = galleryImages[giIdx];
       try {
-        const dims = await getImageDimensions(largeImg);
-        drawCoverImage(doc, largeImg, dims, MARGIN, GAL_START_Y, LARGE_W, GAL_H, 3);
+        const dims = await getImageDimensions(galleryImages[giIdx]);
+        drawCoverImage(doc, galleryImages[giIdx], dims, MARGIN, GAL_START_Y, CONTENT_W, LARGE_H, 3);
       } catch {
         doc.setFillColor(...BLUE_ICE);
-        doc.roundedRect(MARGIN, GAL_START_Y, LARGE_W, GAL_H, 3, 3, 'F');
+        doc.roundedRect(MARGIN, GAL_START_Y, CONTENT_W, LARGE_H, 3, 3, 'F');
       }
       giIdx++;
 
-      // Two stacked images on right
+      // Two images below
       for (let si = 0; si < 2 && giIdx < galleryImages.length; si++) {
-        const sx = MARGIN + LARGE_W + GAP;
-        const sy = GAL_START_Y + si * (SMALL_H + GAP);
+        const sx = MARGIN + si * (SMALL_W + GAP);
+        const sy = GAL_START_Y + LARGE_H + GAP;
         try {
           const dims = await getImageDimensions(galleryImages[giIdx]);
           drawCoverImage(doc, galleryImages[giIdx], dims, sx, sy, SMALL_W, SMALL_H, 3);
@@ -612,16 +653,16 @@ export async function generateExpose(
         giIdx++;
       }
     } else {
-      // Only 1-2 images: show them side by side
-      const imgW = galleryImages.length === 1 ? CONTENT_W : (CONTENT_W - GAP) / 2;
+      // Only 1-2 images: show them stacked or full
+      const imgH = galleryImages.length === 1 ? GAL_H : (GAL_H - GAP) / 2;
       for (let si = 0; si < galleryImages.length && giIdx < galleryImages.length; si++) {
-        const sx = MARGIN + si * (imgW + GAP);
+        const sy = GAL_START_Y + si * (imgH + GAP);
         try {
           const dims = await getImageDimensions(galleryImages[giIdx]);
-          drawCoverImage(doc, galleryImages[giIdx], dims, sx, GAL_START_Y, imgW, GAL_H, 3);
+          drawCoverImage(doc, galleryImages[giIdx], dims, MARGIN, sy, CONTENT_W, imgH, 3);
         } catch {
           doc.setFillColor(...BLUE_ICE);
-          doc.roundedRect(sx, GAL_START_Y, imgW, GAL_H, 3, 3, 'F');
+          doc.roundedRect(MARGIN, sy, CONTENT_W, imgH, 3, 3, 'F');
         }
         giIdx++;
       }
@@ -629,13 +670,10 @@ export async function generateExpose(
 
     addPageFooter(doc, W, H, MARGIN, property);
 
-    report(
-      `Añadiendo imágenes…`,
-      75,
-    );
+    report('Añadiendo imágenes…', 75);
 
-    // ── Remaining gallery pages: 2×3 grid (landscape-optimized) ──
-    const GRID_COLS = 3;
+    // ── Remaining gallery pages: 2×2 grid (portrait-optimized) ──
+    const GRID_COLS = 2;
     const GRID_ROWS = 2;
     const IMGS_PER_PAGE = GRID_COLS * GRID_ROWS;
 
@@ -644,7 +682,7 @@ export async function generateExpose(
       doc.addPage();
       const gridHeaderY = addPageHeader(doc, W, H, MARGIN, logoData, logoDims);
       const GRID_START_Y = gridHeaderY;
-      const GRID_AVAIL_H = H - GRID_START_Y - 20;
+      const GRID_AVAIL_H = H - GRID_START_Y - 22;
       const CELL_W = (CONTENT_W - GAP * (GRID_COLS - 1)) / GRID_COLS;
       const CELL_H = (GRID_AVAIL_H - GAP * (GRID_ROWS - 1)) / GRID_ROWS;
 
@@ -700,11 +738,13 @@ function addPageHeader(
   logoData?: string | null,
   logoDims?: { w: number; h: number } | null,
 ): number {
-  // Slim navy top bar
-  doc.setFillColor(...NAVY);
-  doc.rect(0, 0, W, 18, 'F');
+  // Slim gold top bar
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 0, W, 2.5, 'F');
 
+  // White background header area with logo
   let textX = MARGIN;
+  const headerY = 10;
   if (logoData && logoDims) {
     const logoH = 8;
     const logoW = logoH * (logoDims.w / logoDims.h);
@@ -712,16 +752,21 @@ function addPageHeader(
     textX = MARGIN + logoW + 3;
   }
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...WHITE);
-  doc.text('SUN ELITE HOMES', textX, 11);
+  doc.setFontSize(7.5);
+  doc.setTextColor(...NAVY);
+  doc.text('SUN ELITE HOMES', textX, headerY);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.setTextColor(...BLUE_LIGHT);
-  doc.text('EXPOSÉ', W - MARGIN, 11, { align: 'right' });
+  doc.setTextColor(...GOLD);
+  doc.text('EXPOSÉ', W - MARGIN, headerY, { align: 'right' });
 
-  return 26; // cursor Y after header
+  // Thin line separator
+  doc.setDrawColor(...BLUE_PALE);
+  doc.setLineWidth(0.3);
+  doc.line(MARGIN, 16, W - MARGIN, 16);
+
+  return 22; // cursor Y after header
 }
 
 function addPageFooter(
@@ -731,30 +776,37 @@ function addPageFooter(
   MARGIN: number,
   property: Property,
 ) {
-  accentLine(doc, MARGIN, H - 14, W - MARGIN * 2, 0.25, BLUE_PALE);
+  // Top line
+  doc.setDrawColor(...BLUE_PALE);
+  doc.setLineWidth(0.25);
+  doc.line(MARGIN, H - 16, W - MARGIN, H - 16);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(5.5);
   doc.setTextColor(...BLUE_MID);
-  doc.text('SUN ELITE HOMES  ·  www.sunelitehomes.com', MARGIN, H - 9);
+  doc.text('SUN ELITE HOMES  ·  www.sunelitehomes.com', MARGIN, H - 11);
   doc.text(
     `Ref: ${property.ref}  |  ${property.town}, ${property.province}`,
     MARGIN,
-    H - 5.5,
+    H - 7.5,
   );
   doc.text(
     `Página ${doc.getCurrentPageInfo().pageNumber}`,
     W - MARGIN,
-    H - 5.5,
+    H - 7.5,
     { align: 'right' },
   );
+
+  // Gold bottom bar
+  doc.setFillColor(...GOLD);
+  doc.rect(0, H - 3, W, 3, 'F');
 
   doc.setFontSize(4.5);
   doc.setTextColor(...BLUE_LIGHT);
   doc.text(
     'La información contenida en este documento es orientativa y no tiene carácter contractual.',
     W / 2,
-    H - 2,
+    H - 4,
     { align: 'center' },
   );
 }
