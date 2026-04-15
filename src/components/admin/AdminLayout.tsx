@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, Navigate, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import {
   LayoutDashboard,
@@ -11,14 +11,20 @@ import {
   Menu,
   X,
   ChevronLeft,
+  ChevronDown,
   Users,
   Globe,
+  ShoppingCart,
+  Key,
+  MapPin,
 } from 'lucide-react';
 
 export function AdminLayout() {
   const { isAuthenticated, username, logout, loading } = useAdminAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [propsOpen, setPropsOpen] = useState(true);
 
   if (loading) {
     return (
@@ -40,14 +46,22 @@ export function AdminLayout() {
     navigate('/admin/login');
   };
 
+  const propertySubItems = [
+    { to: '/admin/dashboard', label: 'Todas', cat: null as string | null, icon: undefined as typeof ShoppingCart | undefined },
+    { to: '/admin/dashboard?cat=compra', label: 'Compra', cat: 'compra', icon: ShoppingCart },
+    { to: '/admin/dashboard?cat=alquiler', label: 'Alquiler', cat: 'alquiler', icon: Key },
+    { to: '/admin/dashboard?cat=terreno', label: 'Terrenos', cat: 'terreno', icon: MapPin },
+  ];
+
   const navItems = [
-    { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Propiedades' },
     { to: '/admin/propiedades/nueva', icon: Plus, label: 'Nuevo Inmueble' },
     { to: '/admin/contactos', icon: Users, label: 'Contactos' },
     { to: '/admin/importar', icon: FileUp, label: 'Importar XML' },
     { to: '/admin/portales', icon: Globe, label: 'Portales y Email' },
     { to: '/admin/configuracion', icon: Settings, label: 'Configuración' },
   ];
+
+  const isDashboard = location.pathname === '/admin/dashboard';
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -79,7 +93,50 @@ export function AdminLayout() {
           </div>
 
           {/* Nav links */}
-          <nav className="flex-1 px-3 py-4 space-y-1">
+          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {/* Properties section with sub-items */}
+            <button
+              onClick={() => setPropsOpen(!propsOpen)}
+              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 font-montserrat text-sm rounded transition-colors ${
+                isDashboard
+                  ? 'bg-brand-gold/20 text-brand-gold'
+                  : 'text-white/70 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <LayoutDashboard className="w-5 h-5" />
+                Propiedades
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${propsOpen ? '' : '-rotate-90'}`} />
+            </button>
+            {propsOpen && (
+              <div className="ml-4 pl-4 border-l border-white/10 space-y-0.5">
+                {propertySubItems.map(sub => {
+                  const currentCat = new URLSearchParams(location.search).get('cat');
+                  const isActive = isDashboard && currentCat === sub.cat;
+                  return (
+                    <NavLink
+                      key={sub.to}
+                      to={sub.to}
+                      end
+                      onClick={() => setSidebarOpen(false)}
+                      className={() =>
+                        `flex items-center gap-2.5 px-3 py-2 font-montserrat text-xs rounded transition-colors ${
+                          isActive
+                            ? 'bg-brand-gold/15 text-brand-gold font-medium'
+                            : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                        }`
+                      }
+                    >
+                      {sub.icon && <sub.icon className="w-3.5 h-3.5" />}
+                      {!sub.icon && <span className="w-3.5" />}
+                      {sub.label}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            )}
+
             {navItems.map(item => (
               <NavLink
                 key={item.to}

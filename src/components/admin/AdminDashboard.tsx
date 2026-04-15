@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { fetchAllProperties, deletePropertyById } from '../../lib/propertyService';
 import { formatPrice } from '../../data/properties';
 import type { Property } from '../../data/properties';
@@ -15,11 +15,35 @@ import {
   Loader2,
 } from 'lucide-react';
 
+export type PropertyCategory = 'all' | 'compra' | 'alquiler' | 'terreno';
+
+function filterByCategory(properties: Property[], category: PropertyCategory): Property[] {
+  switch (category) {
+    case 'alquiler':
+      return properties.filter(p => p.priceFreq === 'month');
+    case 'terreno':
+      return properties.filter(p => p.type.toLowerCase() === 'terreno');
+    case 'compra':
+      return properties.filter(p => p.priceFreq === 'sale' && p.type.toLowerCase() !== 'terreno');
+    default:
+      return properties;
+  }
+}
+
+const CATEGORY_LABELS: Record<PropertyCategory, string> = {
+  all: 'Propiedades',
+  compra: 'Compra',
+  alquiler: 'Alquiler',
+  terreno: 'Terrenos',
+};
+
 export function AdminDashboard() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [searchParams] = useSearchParams();
+  const category = (searchParams.get('cat') as PropertyCategory) || 'all';
 
   const loadProperties = useCallback(async () => {
     setLoading(true);
@@ -35,17 +59,19 @@ export function AdminDashboard() {
 
   useEffect(() => { loadProperties(); }, [loadProperties]);
 
+  const categorized = useMemo(() => filterByCategory(properties, category), [properties, category]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return properties;
+    if (!search.trim()) return categorized;
     const q = search.toLowerCase();
-    return properties.filter(
+    return categorized.filter(
       p =>
         p.title.toLowerCase().includes(q) ||
         p.ref.toLowerCase().includes(q) ||
         p.town.toLowerCase().includes(q) ||
         p.province.toLowerCase().includes(q),
     );
-  }, [properties, search]);
+  }, [categorized, search]);
 
   const handleDelete = async (id: number) => {
     try {
@@ -71,11 +97,11 @@ export function AdminDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="font-playfair text-2xl text-gray-800 font-semibold">
-            Propiedades
+            {CATEGORY_LABELS[category]}
           </h1>
           <p className="font-montserrat text-sm text-gray-500 mt-1">
-            {properties.length} inmueble{properties.length !== 1 ? 's' : ''}{' '}
-            registrado{properties.length !== 1 ? 's' : ''}
+            {categorized.length} inmueble{categorized.length !== 1 ? 's' : ''}{' '}
+            {category !== 'all' ? `de ${CATEGORY_LABELS[category].toLowerCase()}` : 'registrado' + (categorized.length !== 1 ? 's' : '')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -114,14 +140,16 @@ export function AdminDashboard() {
         <div className="bg-white p-12 text-center shadow-sm rounded-lg">
           <Home className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h3 className="font-playfair text-xl text-gray-600 mb-2">
-            {properties.length === 0 ? 'No hay propiedades' : 'Sin resultados'}
+            {categorized.length === 0 ? 'No hay propiedades' : 'Sin resultados'}
           </h3>
           <p className="font-montserrat text-sm text-gray-400 mb-6">
-            {properties.length === 0
-              ? 'Añade tu primer inmueble manualmente o importa desde XML.'
+            {categorized.length === 0
+              ? category !== 'all'
+                ? `No hay inmuebles de ${CATEGORY_LABELS[category].toLowerCase()} todavía.`
+                : 'Añade tu primer inmueble manualmente o importa desde XML.'
               : 'Prueba con otros términos de búsqueda.'}
           </p>
-          {properties.length === 0 && (
+          {categorized.length === 0 && category === 'all' && (
             <div className="flex gap-3 justify-center">
               <Link
                 to="/admin/propiedades/nueva"

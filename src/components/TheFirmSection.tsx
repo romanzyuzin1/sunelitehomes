@@ -70,7 +70,7 @@ export function TheFirmSection() {
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 sm:gap-6 border-t border-white/20 pt-6 sm:pt-8">
+            <div className="grid grid-cols-3 gap-2 sm:gap-6 border-t border-white/20 pt-6 sm:pt-8">
               <div>
                 <p className="font-playfair text-2xl sm:text-3xl md:text-4xl font-bold text-brand-gold mb-1">
                   20+

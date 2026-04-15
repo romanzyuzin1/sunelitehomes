@@ -181,7 +181,7 @@ export function AdminSettings() {
               <label className="block font-montserrat text-sm text-gray-600 mb-1">
                 Proveedor de IA
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {([
                   {
                     id: 'groq' as AIProvider,
@@ -286,15 +286,12 @@ export function AdminSettings() {
         </h2>
         <div className="space-y-2 font-montserrat text-sm text-gray-600">
           <p>
-            Los datos de propiedades se almacenan localmente en este navegador
-            (localStorage).
+            Los datos se almacenan en Supabase (base de datos en la nube).
+            Todos los agentes comparten la misma información en tiempo real.
           </p>
           <p>
-            Para un sistema compartido entre múltiples agentes, se recomienda
-            configurar un servidor backend.
-          </p>
-          <p className="text-gray-400 text-xs mt-4">
-            Credenciales por defecto: admin@sunelitehomes.com / admin123
+            Si Supabase no está configurado, los datos se guardan localmente
+            en el navegador (localStorage) como respaldo.
           </p>
         </div>
       </div>

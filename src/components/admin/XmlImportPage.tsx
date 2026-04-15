@@ -148,7 +148,7 @@ export function XmlImportPage() {
       {!imported && parsedProperties.length === 0 && (
         <div className="bg-white p-8 shadow-sm rounded-lg">
           <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-brand-gold hover:bg-brand-gold/5 transition-all"
+            className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-12 text-center cursor-pointer hover:border-brand-gold hover:bg-brand-gold/5 transition-all"
             onClick={() => fileInputRef.current?.click()}
           >
             <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />

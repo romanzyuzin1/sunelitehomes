@@ -57,7 +57,7 @@ export function ProjectGalleryModal({ isOpen, onClose, images, projectName }: Pr
       </button>
 
       {/* Main Image */}
-      <div className="max-w-7xl max-h-[90vh] mx-auto px-20">
+      <div className="max-w-7xl max-h-[90vh] mx-auto px-4 sm:px-12 lg:px-20">
         <img
           src={optimizedSrc(images[currentIndex])}
           alt={`${projectName} - Image ${currentIndex + 1}`}
@@ -66,7 +66,7 @@ export function ProjectGalleryModal({ isOpen, onClose, images, projectName }: Pr
       </div>
 
       {/* Thumbnail Strip */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 overflow-x-auto max-w-4xl px-4">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 overflow-x-auto max-w-[90vw] sm:max-w-2xl md:max-w-4xl px-4">
         {images.map((img, idx) => (
           <button
             key={idx}

@@ -46,7 +46,7 @@ export function ServicesSection() {
           </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
           {services.map((service, index) => (
             <motion.div
               key={service.title}
@@ -55,7 +55,7 @@ export function ServicesSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
               whileHover={{ y: -8 }}
-              className="group bg-white p-10 shadow-md hover:shadow-2xl transition-all duration-500 relative overflow-hidden"
+              className="group bg-white p-6 sm:p-8 lg:p-10 shadow-md hover:shadow-2xl transition-all duration-500 relative overflow-hidden"
             >
               {/* Gold accent line on hover */}
               <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--gold)] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700" />

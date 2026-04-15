@@ -197,7 +197,7 @@ export function ContactList() {
                     {contact.status}
                   </span>
                 </div>
-                <div className="flex items-center gap-4 mt-1 text-xs text-gray-500 font-montserrat">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1 text-xs text-gray-500 font-montserrat">
                   {contact.email && (
                     <span className="flex items-center gap-1">
                       <Mail className="w-3 h-3" /> {contact.email}

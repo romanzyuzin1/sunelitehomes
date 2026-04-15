@@ -417,7 +417,7 @@ export function PropertyEditor() {
             />
           </LabelField>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <LabelField label="Latitud">
             <input
               type="number"
@@ -888,7 +888,7 @@ export function PropertyEditor() {
         <h3 className="font-montserrat text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
           Superficies (m²)
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <LabelField label="Superficie construida">
             <input
               type="text"
@@ -953,7 +953,7 @@ export function PropertyEditor() {
         <h3 className="font-montserrat text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
           Habitaciones
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <LabelField label="Nº habitaciones">
             <input
               type="text"
@@ -1659,7 +1659,7 @@ export function PropertyEditor() {
         <h3 className="font-montserrat text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
           Resumen del inmueble
         </h3>
-        <div className="grid grid-cols-2 gap-4 text-sm font-montserrat">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm font-montserrat">
           <div className="flex justify-between">
             <span className="text-gray-500">Título</span>
             <span className="text-gray-800 font-medium truncate ml-4">{property.title || '—'}</span>

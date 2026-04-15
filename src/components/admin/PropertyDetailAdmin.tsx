@@ -310,15 +310,15 @@ export function PropertyDetailAdmin() {
   return (
     <div className="max-w-5xl">
       {/* ── Header ── */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
         <button
           onClick={() => navigate('/admin/dashboard')}
-          className="p-2 hover:bg-gray-100 rounded transition-colors"
+          className="p-2 hover:bg-gray-100 rounded transition-colors self-start"
         >
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="font-playfair text-2xl text-gray-800 font-semibold truncate">
+          <h1 className="font-playfair text-xl sm:text-2xl text-gray-800 font-semibold truncate">
             {property.title || property.ref || `Inmueble #${property.id}`}
           </h1>
           <div className="flex items-center gap-3 mt-1 font-montserrat text-sm text-gray-400">
@@ -330,7 +330,7 @@ export function PropertyDetailAdmin() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={async () => {
               if (pdfProgress) return;
@@ -374,16 +374,16 @@ export function PropertyDetailAdmin() {
       </div>
 
       {/* ── Main grid ── */}
-      <div className="grid lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
         {/* Images */}
-        <div className="lg:col-span-2">
+        <div className="md:col-span-2 lg:col-span-2">
           {property.images.length > 0 ? (
             <div className="grid grid-cols-2 gap-2 rounded-lg overflow-hidden">
               <div className="col-span-2">
                 <img
                   src={property.images[0]}
                   alt={property.title}
-                  className="w-full h-64 object-cover"
+                  className="w-full h-48 sm:h-64 object-cover"
                 />
               </div>
               {property.images.slice(1, 5).map((img, i) => (
@@ -391,7 +391,7 @@ export function PropertyDetailAdmin() {
                   key={i}
                   src={img}
                   alt=""
-                  className="w-full h-32 object-cover"
+                  className="w-full h-24 sm:h-32 object-cover"
                 />
               ))}
               {property.images.length > 5 && (

@@ -182,27 +182,31 @@ export async function generateExpose(
   const heroImg = imageDataUrls[0];
   const heroDims = heroImg ? await getImageDimensions(heroImg) : null;
 
-  // ── Slim gold top bar ──
+  // ── Navy blue header strip with logo + company name ──
+  const HEADER_STRIP_H = 22;
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, W, HEADER_STRIP_H, 'F');
+  // Gold accent line at bottom of strip
   doc.setFillColor(...GOLD);
-  doc.rect(0, 0, W, 3, 'F');
+  doc.rect(0, HEADER_STRIP_H, W, 0.8, 'F');
 
-  // ── Logo area ──
-  let cy = 12;
+  const logoAreaY = 4;
   if (logoData && logoDims) {
     const logoH = 14;
     const logoW = logoH * (logoDims.w / logoDims.h);
-    doc.addImage(logoData, 'PNG', MARGIN, cy, logoW, logoH);
-    cy += logoH + 2;
+    doc.addImage(logoData, 'PNG', MARGIN, logoAreaY, logoW, logoH);
+    // Company name to the right of the logo
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(...GOLD);
-    doc.text('SUN ELITE HOMES', MARGIN, cy);
+    doc.setFontSize(12);
+    doc.setTextColor(255, 255, 255);
+    doc.text('SunEliteHomes', MARGIN + logoW + 4, logoAreaY + logoH / 2 + 2);
   } else {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...NAVY);
-    doc.text('SUN ELITE HOMES', MARGIN, cy);
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.text('SunEliteHomes', MARGIN, 14);
   }
+  let cy = HEADER_STRIP_H + 2;
 
   // ── Hero image (full width, large) ──
   const HERO_Y = 38;
@@ -738,35 +742,33 @@ function addPageHeader(
   logoData?: string | null,
   logoDims?: { w: number; h: number } | null,
 ): number {
-  // Slim gold top bar
+  // Navy blue header strip
+  const stripH = 14;
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, W, stripH, 'F');
+  // Gold accent line at bottom
   doc.setFillColor(...GOLD);
-  doc.rect(0, 0, W, 2.5, 'F');
+  doc.rect(0, stripH, W, 0.5, 'F');
 
-  // White background header area with logo
   let textX = MARGIN;
-  const headerY = 10;
+  const logoY = 3;
   if (logoData && logoDims) {
     const logoH = 8;
     const logoW = logoH * (logoDims.w / logoDims.h);
-    doc.addImage(logoData, 'PNG', MARGIN, 5, logoW, logoH);
+    doc.addImage(logoData, 'PNG', MARGIN, logoY, logoW, logoH);
     textX = MARGIN + logoW + 3;
   }
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
-  doc.setTextColor(...NAVY);
-  doc.text('SUN ELITE HOMES', textX, headerY);
+  doc.setTextColor(255, 255, 255);
+  doc.text('SunEliteHomes', textX, logoY + 6);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...GOLD);
-  doc.text('EXPOSÉ', W - MARGIN, headerY, { align: 'right' });
+  doc.text('EXPOSÉ', W - MARGIN, logoY + 6, { align: 'right' });
 
-  // Thin line separator
-  doc.setDrawColor(...BLUE_PALE);
-  doc.setLineWidth(0.3);
-  doc.line(MARGIN, 16, W - MARGIN, 16);
-
-  return 22; // cursor Y after header
+  return stripH + 4; // cursor Y after header
 }
 
 function addPageFooter(

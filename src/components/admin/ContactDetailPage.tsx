@@ -208,7 +208,7 @@ export function ContactDetailPage() {
       </div>
 
       {/* ── 3-Column Layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_240px] gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_240px] gap-4 lg:gap-5">
 
         {/* ═══════ LEFT SIDEBAR — Contact Card ═══════ */}
         <div className="space-y-4">
