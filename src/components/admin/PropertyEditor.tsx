@@ -43,7 +43,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { uploadPropertyImages, deletePropertyImage, type UploadProgress } from '../../lib/imageUpload';
-import { generateDescription, type DescriptionType } from '../../lib/aiService';
+import { generateDescription, type DescriptionType, type TextLength } from '../../lib/aiService';
 import { SortableImageGrid } from './SortableImageGrid';
 import { EditorMap } from './EditorMap';
 
@@ -162,6 +162,7 @@ export function PropertyEditor() {
   // AI description generation
   const [aiGenerating, setAiGenerating] = useState<DescriptionType | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiLength, setAiLength] = useState<TextLength>('medium');
 
   // Validation & success state
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -771,7 +772,7 @@ export function PropertyEditor() {
     setAiGenerating(type);
     setAiError(null);
     try {
-      const text = await generateDescription(property, type);
+      const text = await generateDescription(property, type, aiLength);
       if (type === 'property') {
         updateField('description', text);
       } else {
@@ -801,6 +802,25 @@ export function PropertyEditor() {
           </button>
         </div>
       )}
+
+      {/* AI text length selector */}
+      <div className="flex items-center gap-2">
+        <span className="font-montserrat text-xs text-gray-500 font-medium">Longitud del texto IA:</span>
+        {([['short', 'Corto'], ['medium', 'Medio'], ['long', 'Largo']] as [TextLength, string][]).map(([val, label]) => (
+          <button
+            key={val}
+            type="button"
+            onClick={() => setAiLength(val)}
+            className={`px-3 py-1 rounded-full font-montserrat text-xs font-semibold transition-all ${
+              aiLength === val
+                ? 'bg-violet-600 text-white shadow-sm'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {/* Descripción del inmueble */}
       <div>

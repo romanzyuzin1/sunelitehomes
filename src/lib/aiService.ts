@@ -119,9 +119,17 @@ Escribes siempre en español de España. No uses hashtags ni emojis.
 No inventes datos que no se proporcionen (superficies, precios, características que no existen).
 Si no tienes suficiente información sobre algo, no lo menciones.`;
 
-function getPropertyDescriptionPrompt(property: Property): string {
+type _TextLength = 'short' | 'medium' | 'long';
+
+const LENGTH_INSTRUCTIONS: Record<_TextLength, string> = {
+  short: 'La descripción debe ser BREVE y concisa: 1-2 párrafos cortos, máximo 80 palabras.',
+  medium: 'La descripción debe ser de longitud media: 3-4 párrafos, alrededor de 150-200 palabras.',
+  long: 'La descripción debe ser detallada y extensa: 5-7 párrafos, alrededor de 350-450 palabras.',
+};
+
+function getPropertyDescriptionPrompt(property: Property, length: _TextLength = 'medium'): string {
   return `Genera una descripción de venta profesional para el siguiente inmueble.
-La descripción debe ser atractiva, detallada (4-6 párrafos), y resaltar las mejores cualidades de la propiedad.
+${LENGTH_INSTRUCTIONS[length]} Resalta las mejores cualidades de la propiedad.
 No repitas el precio ni datos numéricos exactos ya que se muestran en la ficha. Evita frases genéricas como "no pierdas esta oportunidad".
 Enfócate en la experiencia de vivir en esta propiedad: los espacios, la luz, la calidad, el estilo de vida.
 
@@ -131,11 +139,17 @@ ${buildPropertyContext(property)}
 Genera SOLO la descripción, sin títulos ni encabezados. Texto plano sin formato markdown.`;
 }
 
-function getZoneDescriptionPrompt(property: Property): string {
+const ZONE_LENGTH_INSTRUCTIONS: Record<_TextLength, string> = {
+  short: '1 párrafo breve, máximo 60 palabras.',
+  medium: '2-3 párrafos, alrededor de 120-150 palabras.',
+  long: '3-5 párrafos detallados, alrededor de 250-300 palabras.',
+};
+
+function getZoneDescriptionPrompt(property: Property, length: _TextLength = 'medium'): string {
   return `Genera una descripción profesional de la ZONA donde se ubica este inmueble.
 Describe el entorno, servicios cercanos, ambiente del barrio, transporte, colegios, comercios, ocio.
 Usa tu conocimiento real sobre la zona. Si no la conoces con seguridad, genera una descripción genérica pero plausible basándote en los datos proporcionados.
-2-3 párrafos máximo.
+${ZONE_LENGTH_INSTRUCTIONS[length]}
 
 DATOS DE UBICACIÓN:
 Población: ${property.town || 'No especificada'}
@@ -239,10 +253,12 @@ async function callGemini(apiKey: string, systemPrompt: string, userPrompt: stri
 /* ── Public API ─────────────────────────────────────────────────── */
 
 export type DescriptionType = 'property' | 'zone';
+export type TextLength = 'short' | 'medium' | 'long';
 
 export async function generateDescription(
   property: Property,
   type: DescriptionType,
+  length: TextLength = 'medium',
 ): Promise<string> {
   const config = await loadAIConfig();
 
@@ -254,8 +270,8 @@ export async function generateDescription(
   }
 
   const userPrompt = type === 'property'
-    ? getPropertyDescriptionPrompt(property)
-    : getZoneDescriptionPrompt(property);
+    ? getPropertyDescriptionPrompt(property, length)
+    : getZoneDescriptionPrompt(property, length);
 
   if (config.provider === 'groq') {
     return callGroq(config.apiKey, SYSTEM_PROMPT, userPrompt);
