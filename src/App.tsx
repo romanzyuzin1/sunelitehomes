@@ -21,6 +21,7 @@ import { ContactEditor } from './components/admin/ContactEditor';
 import { ContactDetailPage } from './components/admin/ContactDetailPage';
 import { PropertyDetailAdmin } from './components/admin/PropertyDetailAdmin';
 import { PortalSettings } from './components/admin/PortalSettings';
+import { ServicePage } from './components/ServicePage';
 
 function HomePage() {
   const location = useLocation();
@@ -58,6 +59,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/inmueble/:id" element={<PropertyDetailPage />} />
+            <Route path="/servicios/:slug" element={<ServicePage />} />
 
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />

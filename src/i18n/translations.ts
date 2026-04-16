@@ -27,8 +27,8 @@ export const translations = {
     },
     // Lifestyle
     lifestyle: {
-      coast: 'Compramos',
-      coastDesc: 'Adquirimos propiedades excepcionales con visión estratégica y criterio.',
+      coast: 'Alquilamos',
+      coastDesc: 'Gestionamos alquileres de lujo con atención personalizada y máximo rendimiento.',
       design: 'Vendemos',
       designDesc: 'Comercializamos inmuebles exclusivos con máxima confidencialidad.',
       city: 'Reformamos',
@@ -150,8 +150,8 @@ export const translations = {
     },
     // Lifestyle
     lifestyle: {
-      coast: 'We Buy',
-      coastDesc: 'We acquire exceptional properties with strategic vision and criteria.',
+      coast: 'We Rent',
+      coastDesc: 'We manage luxury rentals with personalised attention and maximum returns.',
       design: 'We Sell',
       designDesc: 'We market exclusive properties with maximum confidentiality.',
       city: 'We Renovate',

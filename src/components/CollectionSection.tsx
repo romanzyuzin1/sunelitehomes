@@ -249,8 +249,8 @@ export function CollectionSection() {
           </div>
         )}
 
-        {/* Portfolio Gallery */}
-        <div className="text-center mt-20 mb-12">
+        {/* Portfolio Gallery — hidden for now */}
+        {/* <div className="text-center mt-20 mb-12">
           <div className="gold-accent mx-auto mb-6" />
           <h3 className="font-playfair text-2xl md:text-3xl text-white mb-4">
             {language === 'es' ? 'Nuestros Proyectos' : 'Our Projects'}
@@ -273,7 +273,6 @@ export function CollectionSection() {
                 className="group cursor-pointer"
                 onClick={() => openGallery(property)}
               >
-                {/* Image */}
                 <div className="relative aspect-[4/3] overflow-hidden mb-4">
                   <img
                     src={thumbSrc(property.image)}
@@ -282,10 +281,8 @@ export function CollectionSection() {
                     decoding="async"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  {/* Subtle overlay on hover */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
 
-                  {/* Status Badge */}
                   {status && style && (
                     <span className={`absolute top-4 left-4 px-3 py-1 text-xs font-montserrat font-semibold uppercase tracking-wider ${style.bg} ${style.text}`}>
                       {status === 'Nueva Captación' ? t.newListing
@@ -294,17 +291,14 @@ export function CollectionSection() {
                     </span>
                   )}
 
-                  {/* Gallery indicator */}
                   <div className="absolute bottom-4 right-4 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 text-white text-xs font-montserrat opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <Images className="w-3.5 h-3.5" />
                     {property.allImages.length}
                   </div>
 
-                  {/* Gold bottom accent on hover */}
                   <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
                 </div>
 
-                {/* Info */}
                 <div className="px-1">
                   <h3 className="font-playfair text-xl md:text-2xl text-white font-semibold mb-1.5 group-hover:text-brand-gold transition-colors duration-300">
                     {property.name}
@@ -314,7 +308,6 @@ export function CollectionSection() {
                     <span className="font-montserrat text-sm">{property.location}</span>
                   </div>
 
-                  {/* Stats */}
                   <div className="flex items-center gap-5 text-white/60 font-montserrat text-sm border-t border-white/10 pt-3">
                     <div className="flex items-center gap-1.5">
                       <Bed className="w-4 h-4 text-brand-gold/70" />
@@ -335,12 +328,11 @@ export function CollectionSection() {
           })}
         </div>
 
-        {/* CTA */}
         <div className="text-center mt-16">
           <button className="px-8 py-3 border-2 border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-black transition-all font-montserrat font-semibold">
             {t.viewAll}
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Gallery Modal — images load on demand only when opened */}
